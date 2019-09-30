@@ -1,0 +1,466 @@
+---
+title: "Report of Analysis on Extracted Features"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## General summarize of all datasets
+All datasets are merged into a single file for analysis. Feature column has been normalized over all datasets using min-max normalization.
+
+```{r load libraries and functions, echo=FALSE}
+library("ggplot2")
+library("reshape2")
+library("plyr")
+
+minMaxNormalization <- function(x){
+  return ((x - min(x))/(max(x)-min(x)))
+}
+normalizeDataFrame <- function(data_frame_no_normalized, features_list){
+  data_frame_normalized <- data.frame(data_frame_no_normalized)
+  data_frame_colnames <- colnames(data_frame_normalized)
+  for (feature_name in features_list){
+    if (feature_name %in% data_frame_colnames){
+      data_frame_normalized[,feature_name] <- minMaxNormalization(data_frame_normalized[,feature_name])
+    }
+  }
+  return (data_frame_normalized)
+}
+drawFeatureBoxplot <- function(data, x_col_name, y_col_name, xlab_str, ylab_str){
+  p_boxplot <- ggplot(data, aes_string(x=x_col_name, y=y_col_name)) + 
+    geom_boxplot(width=0.65) +
+    xlab(xlab_str) +
+    ylab(ylab_str)+
+    theme_bw() +
+    theme(axis.text.x = element_text(size=15),
+          axis.text.y = element_text(size=15),
+          axis.title=element_text(size=15)) +
+    scale_x_discrete(limits=c('FSD','S9','S10','VIC','VAN','TAXI'))
+  
+  p_boxplot
+  return (p_boxplot)
+}
+
+drawNConvexHullTrend <- function(dataframe, dataset_id){
+    metrics <- dataframe[dataframe$dataset == dataset_id, c("user_id","N5", "N10", "N15", "N20")]
+  metrics_for_plot <- melt(metrics, id=("user_id"))
+  plot_topN_trend <- ggplot(metrics_for_plot, aes(x=variable,y=value,group=user_id)) +
+                            geom_line(aes(color=factor(user_id))) +
+                            geom_point(aes(color=factor(user_id))) +
+                            xlab("N") +
+                            ylab("Area of Convex Hull") +
+                            theme_bw() +
+                            theme(legend.position="none")
+  return (plot_topN_trend)
+}
+
+```
+
+```{r load feature csv file, echo=FALSE}
+setwd("/Users/ruizhang/Dropbox (Personal)/dimensionality_activity_space_0326/Features-1.0/features/analysis/")
+# data_file <- "/Users/ruizhang/Dropbox/dimensionality_activity_space_0326/Features-1.0/results/all_datasets/normalized_features_all_datasets.csv"
+no_normalized_data_file <- "/Users/ruizhang/Dropbox (Personal)/dimensionality_activity_space_0326/Features-1.0/results/all_datasets/no_normalized_features_all_datasets_valid_participants_only.csv"
+feature_column_names <- c("dataset","user_id","convex_hull","buffer_area","N5","N10","N15","N20","dim","C1","C2","C3","C4","C5","R.squared")
+features_need_to_normalized <- c("convex_hull","buffer_area","N5","N10","N15","N20","dim","C1","C2","C3","C4","C5","R.squared")
+data <- read.csv(no_normalized_data_file)
+metrics.no_normalized_df <- data[,feature_column_names]
+metrics.normalized_df <- normalizeDataFrame(metrics.no_normalized_df, features_need_to_normalized)
+metrics.normalized_df$dataset <- revalue(factor(metrics.normalized_df$dataset), 
+                                         c("foodstudy"="FSD", "SHED9"="S9", "SHED10" = "S10","Victoria"="VIC","Vancouver"="VAN","Taxi"="TAXI"))
+city_area <- c("17km * 17km", "20km * 20km", "75km * 63km", "33km * 30km")
+names(city_area) <- c("Saskatoon", "Victoria", "Vancouver", "Rome")
+```
+
+
+First several samples are as following:
+```{r summarize of datasets}
+head(metrics.normalized_df)
+```
+
+Numbers of participants in each dataset are as following:
+```{r participants distribution in each dataset, echo=FALSE}
+dataset_ids <- data$dataset
+factor_dataset_id <- factor(dataset_ids)
+summary(factor_dataset_id)
+```
+
+And the city area of all related cities are:
+```{r show city area of all cities, echo=FALSE}
+city_area
+```
+
+The distribution of study days of participants in different datasets is as follows. 
+
+```{r plot study duration boxplot, echo=FALSE}
+daily_gps_count <- read.csv("/Users/ruizhang/Dropbox (Personal)/dimensionality_activity_space_0326/Features-1.0/results/all_datasets/daily_gps_count_summary.csv")
+study_duration_boxplot <- drawFeatureBoxplot(daily_gps_count, "dataset", "total_days","Datasets", "Study Duration (days)")
+study_duration_boxplot
+
+```
+
+And the distribution of average GPS records per day is as follows. Because datasets have different base duty cycles (foodstudy: 8mins, Taxi: 1min, and the others: 5 mins), I downsampled all datasets with duty cycle of 40 mins. Then I count the remaining duty cycles and divide the count by total days of each participants to get average GPS records per day. The results showed that Taxi datasets has much less duty cycles per day. And food study also has less duty cycles than the other datasets.
+
+```{r plot daily gps record count boxplot, echo=FALSE}
+daily_gps_boxplot <- drawFeatureBoxplot(daily_gps_count, "dataset","daily_gps_count","Datasets","Daily GPS Duty Cycles (40 mins)")
+daily_gps_boxplot
+```
+
+```{r}
+
+subplot_label <- c('(A)','(B)')
+png("plots_new/dataset_quality.png",  width =10, height = 6, units = 'in', res = 300)
+ggarrange(study_duration_boxplot, daily_gps_boxplot,
+          ncol=2, nrow=1,  
+          labels='AUTO',
+          font.label = list(size = 16, color = "black", face = "bold", family = NULL)
+          )
+dev.off()
+
+```
+
+And the columns used in analysis are the following:
+
+```{r show metrics.df}
+colnames(metrics.normalized_df)
+```
+
+## Analysis of spatial temporal entropy rate
+
+The equation of spatial temporal entropy rate is:  
+
+![Spatial Temporal Entropy Rate Equation](spatial_entropy_rate_equation.png)
+
+![Equation of C1-C5](C1-C5.png)
+
+We fitted **C1**, **C2**, **C3**, **C4**, **C5** using Eureqa and recorded R-squared value of the fitting. 
+
+During the fitting process, the fitting of Taxi datasets is not as good as the other datasets. The distribution of R-squared of each dataset is shown in following boxplot. 
+
+```{r plot r_squared boxplot, echo=FALSE}
+p_r_squared <- drawFeatureBoxplot(metrics.normalized_df, "dataset", "R.squared","Datasets","R-squared")
+p_r_squared
+```
+
+```{r}
+png("plots_new/R_squared.png", width =6, height = 4, units = 'in', res = 300)
+p_r_squared
+dev.off()
+```
+
+
+```{r Anova and Tukey HSD test for R-squared}
+metrics.a_r_squared <- aov(R.squared ~ dataset, data = metrics.normalized_df) 
+summary(metrics.a_r_squared)
+TukeyHSD(metrics.a_r_squared)
+```
+
+
+### Fitted paramters of spatial temporal entropy rate: **C1**
+
+```{r distribution of fitted entropy rate parameters C1, echo=FALSE}
+p_C1 <- drawFeatureBoxplot(metrics.normalized_df, "dataset", "C1","Datasets","C1")
+p_C1
+```
+
+```{r Anova and Tukey HSD test for C1}
+metrics.a_C1 <- aov(C1 ~ dataset, data = metrics.normalized_df) 
+summary(metrics.a_C1)
+TukeyHSD(metrics.a_C1)
+```
+
+According to the statistical analysis, foodstudy is significantly different from all the other datasets. And Taxi is different from SHED9, SHED10, Victoria, and foodstudy. But there is not difference between Taxi and Vancouver.   
+
+### Fitted paramters of spatial temporal entropy rate: **C2**
+
+```{r plot C2 boxplot, echo=FALSE}
+p_C2 <- drawFeatureBoxplot(metrics.normalized_df, "dataset", "C2","Datasets","C2")
+p_C2
+```
+```{r Anova and Tukey HSD test for C2}
+metrics.a_C2 <- aov(C2 ~ dataset, data = metrics.normalized_df) 
+summary(metrics.a_C2)
+TukeyHSD(metrics.a_C2)
+```
+
+Foodstudy is still different from all the other datasets. SHED9 is also different from all the other datasets. The important thing is: **SHED9 is different from SHED10**.
+
+### Fitted paramters of spatial temporal entropy rate: **C3**
+
+```{r plot C3 boxplot, echo=FALSE}
+p_C3 <- drawFeatureBoxplot(metrics.normalized_df, "dataset", "C3","Datasets","C3")
+p_C3
+```
+
+```{r Anova and Tukey HSD test for C3}
+metrics.a_C3 <- aov(C3 ~ dataset, data = metrics.normalized_df) 
+summary(metrics.a_C3)
+TukeyHSD(metrics.a_C3)
+```
+The results have similar pattern with that of **C1**. Foodstudy is still different from all the other datasets. Taxi is different from foodstudy, SHED10, SHED9, and Victoria. But Taxi is not different from Vancouver. 
+
+### Fitted paramters of spatial temporal entropy rate: **C4**
+
+```{r plot C4 boxplot, echo=FALSE}
+p_C4 <- drawFeatureBoxplot(metrics.normalized_df, "dataset", "C4","Datasets","C4")
+p_C4
+```
+```{r Anova and Tukey HSD test for C4}
+metrics.a_C4 <- aov(C4 ~ dataset, data = metrics.normalized_df) 
+summary(metrics.a_C4)
+TukeyHSD(metrics.a_C4)
+```
+
+Foodstudy is significantly from all the other datasets. And Taxi is different from SHED9.
+
+### Fitted paramters of spatial temporal entropy rate: **C5**
+
+```{r plot C5 boxplot, echo=FALSE}
+p_C5 <- drawFeatureBoxplot(metrics.normalized_df, "dataset", "C5","Datasets","C5")
+p_C5
+```
+
+```{r Anova and Tukey HSD test for C5}
+metrics.a_C5 <- aov(C5 ~ dataset, data = metrics.normalized_df) 
+summary(metrics.a_C5)
+TukeyHSD(metrics.a_C5)
+```
+
+There is **no significant difference** between SHED10 and Victoria, SHED10 and Vancouver, Victoria and Vancouver.
+
+## Standard convex hull VS. top N convex hull VS. Buffer area
+
+### Standard Convex Hull
+
+```{r plot standard convex hull boxplot, echo=FALSE}
+p_convex_hull <- drawFeatureBoxplot(metrics.normalized_df, "dataset", "convex_hull","Datasets","Convex Hull")
+p_convex_hull
+```
+```{r Anova and Tukey HSD test for standard Convex Hull}
+metrics.a_convex_hull <- aov(convex_hull ~ dataset, data = metrics.normalized_df) 
+summary(metrics.a_convex_hull)
+TukeyHSD(metrics.a_convex_hull)
+```
+
+<!--There is no significant difference between foodstudy and SHED10, foodstudy and Victoria,  Vancouver and Taxi. There shouldn't be difference between foodstudy and SHED10 for sure. And because the area of Saskatoon and Victoria are close (17 km^2 VS. 20 km^2), the foodstudy and Victoria, SHED10 are not as significant as the others but still different. Although the city area of Vancouver and Taxi are different, there is no differnce and the reason maybe taxi driver would travel all around the city. -->
+
+1. There is no difference between the three datasets in Saskatoon. 
+2. There is no big difference between Vancouver and Taxi. The reason may be: taxi driver would travel all around the city which eliminates the difference of city area between Vancouver and Rome. 
+3. Victoria and foodstudy is not significantly different. (Why?)
+
+### Convex hull of top 5 visited places
+
+```{r plot top 5 Convex Hull}
+p_N5 <- drawFeatureBoxplot(metrics.normalized_df, "dataset", "N5","Datasets","Top 5 visited places Convex Hull")
+p_N5
+```
+```{r Anova and Tukey HSD test for top 5 Convex Hull}
+metrics.a_N5 <- aov(N5 ~ dataset, data = metrics.normalized_df) 
+summary(metrics.a_N5)
+TukeyHSD(metrics.a_N5)
+
+```
+
+```{r plot top 10 Convex Hull}
+p_N10 <- drawFeatureBoxplot(metrics.normalized_df, "dataset", "N10","Datasets","Top 10 visited places Convex Hull")
+p_N10
+```
+
+```{r Anova and Tukey HSD test for top 10 Convex Hull}
+metrics.a_N10 <- aov(N10 ~ dataset, data = metrics.normalized_df) 
+summary(metrics.a_N10)
+TukeyHSD(metrics.a_N10)
+```
+
+```{r plot top 15 Convex Hull}
+p_N15 <- drawFeatureBoxplot(metrics.normalized_df, "dataset", "N15","Datasets","Top 15 visited places Convex Hull")
+p_N15
+```
+
+```{r Anova and Tukey HSD test for top 15 Convex Hull}
+metrics.a_N15 <- aov(N15 ~ dataset, data = metrics.normalized_df) 
+summary(metrics.a_N15)
+TukeyHSD(metrics.a_N15)
+```
+
+```{r plot top 20 Convex Hull}
+p_N20 <- drawFeatureBoxplot(metrics.normalized_df, "dataset", "N20","Datasets","Top 20 visited places Convex Hull")
+p_N20
+```
+
+```{r Anova and Tukey HSD test for top 20 Convex Hull}
+metrics.a_N20 <- aov(N20 ~ dataset, data = metrics.normalized_df) 
+summary(metrics.a_N20)
+TukeyHSD(metrics.a_N20)
+```
+The statistial difference of top N convex hull can be summarized as:
+
+<!--
+1. N5: Vancouver is different from all the other datasets. Victoria is different from SHED10
+2. N10: Vancouver is differnet from all the other datasets. Taxi is different from SHED10.
+3. N15: Vancouver is different from all the other datasets.
+4. N20: Vancouver is different from all the other datasets.
+-->
+1. top5: SHED9 is different from Victoria (not very significant), Vancouver, and Taxi, SHED10 is different from Vancouver and Taxi;
+2. top10: Vancouver is different from all the other datasets. Taxi is different from SHED9, SHED10, and Vancouver. Taxi is not different with foodstudy and Victoria.
+3. top15: The same with N10.
+4. top20: Vancouver is different from all the other datasets. Taxi is different from SHED9, SHED10, and Vancouver. Victoria is different from SHED9. 
+
+
+```{r show convergence of p value with N}
+p_value_N5 <- summary(metrics.a_N5)[[1]][["Pr(>F)"]][1]
+p_value_N10 <- summary(metrics.a_N10)[[1]][["Pr(>F)"]][1]
+p_value_N15 <- summary(metrics.a_N15)[[1]][["Pr(>F)"]][1]
+p_value_N20 <- summary(metrics.a_N20)[[1]][["Pr(>F)"]][1]
+p_value <- c(p_value_N5, p_value_N10, p_value_N15, p_value_N20)
+N <- c(5, 10, 15, 20)
+topN_convex_p_value <- data.frame(N,p_value)
+topN_convex_p_value_plot <- ggplot(topN_convex_p_value, aes(N, p_value)) +
+                            geom_point()+
+                            scale_y_log10() +
+                            ylab("log(p_value)")
+topN_convex_p_value_plot
+```
+
+
+The trend of area of top N Convex Hull is shown as following:
+
+#### Food Study
+ 
+```{r show convergence of top N convex hull area for foodstudy, echo=FALSE}
+library(reshape2)
+plot_topN_trend_foodstudy <- drawNConvexHullTrend(metrics.no_normalized_df, "foodstudy")
+plot_topN_trend_foodstudy
+
+```
+
+#### SHED10
+
+```{r show convergence of top N convex hull area for SHED10, echo=FALSE}
+plot_topN_trend_SHED10 <- drawNConvexHullTrend(metrics.no_normalized_df, "SHED10")
+plot_topN_trend_SHED10
+```
+
+#### Victoria
+
+```{r show convergence of top N convex hull area for Victoria, echo=FALSE}
+plot_topN_trend_Victoria <- drawNConvexHullTrend(metrics.no_normalized_df, "Victoria")
+plot_topN_trend_Victoria
+```
+
+#### Vancouver
+
+```{r show convergence of top N convex hull area for Vancouver, echo=FALSE}
+plot_topN_trend_Vancouver <- drawNConvexHullTrend(metrics.no_normalized_df, "Vancouver")
+plot_topN_trend_Vancouver
+```
+
+#### Taxi
+
+```{r show convergence of top N convex hull area for Taxi, echo=FALSE}
+plot_topN_trend_Taxi <- drawNConvexHullTrend(metrics.no_normalized_df, "Taxi")
+plot_topN_trend_Taxi
+```
+
+
+### Buffer area
+
+The buffer size I used is 200m with UTM coordinates.
+
+```{r plot buffer area boxplot}
+p_buffer_area <- drawFeatureBoxplot(metrics.normalized_df, "dataset", "buffer_area","Datasets","Buffer Area")
+p_buffer_area
+```
+```{r Anova and Tukey HSD test for buffer area}
+metrics.a_buffer_area <- aov(buffer_area ~ dataset, data = metrics.normalized_df) 
+summary(metrics.a_buffer_area)
+TukeyHSD(metrics.a_buffer_area)
+```
+
+Summary:
+1. The buffer area of taxi driver is obviously larger than the other datasets. This is different from Convex Hull. If we use standard convex hull, the median value of convex hull area in Taxi datasets is a little larger than that of Vancouver. But if we use convex hull of top N dwelling places, Vancouver has the largest median.  
+
+##Fractal Dimension
+
+```{r plot fractal dimension boxplot}
+p_dim <- drawFeatureBoxplot(metrics.normalized_df, "dataset", "dim","Datasets","Fractal Dimension")
+p_dim
+```
+
+```{r Anova and Tukey HSD test for Fractal Dimension}
+metrics.a_dim <- aov(dim ~ dataset, data = metrics.normalized_df) 
+summary(metrics.a_dim)
+TukeyHSD(metrics.a_dim)
+```
+
+The important thing is: **There is no difference between the datasets in Saskatoon**. Victoria is not different from foodstudy.
+
+## Generate grouped plots for paper
+
+```{r}
+png("plots_new/dim.png", width =6, height = 4, units = 'in', res = 300)
+p_dim
+dev.off()
+
+```
+
+
+```{r}
+png("plots_new/buffer_area.png",  width =6, height = 4, units = 'in', res = 300)
+p_buffer_area
+dev.off()
+```
+
+```{r}
+png("plots_new/convex_hull.png",  width =8, height = 4, units = 'in', res = 300)
+ggarrange(p_convex_hull, p_N10, ncol=2, nrow=1)
+dev.off()
+```
+
+```{r}
+png("plots_new/entropy_rate.png",  width =12, height = 8, units = 'in', res = 300)
+ggarrange(p_C1, p_C2, p_C3, p_C4, p_C5, ncol=3, nrow=2)
+dev.off()
+```
+
+```{r merge all boxplots}
+p_C1 <- drawFeatureBoxplot(metrics.normalized_df, "dataset", "C1","Datasets","C1")
+p_C2 <- drawFeatureBoxplot(metrics.normalized_df, "dataset", "C2","Datasets","C2")
+p_C3 <- drawFeatureBoxplot(metrics.normalized_df, "dataset", "C3","Datasets","C3")
+p_C4 <- drawFeatureBoxplot(metrics.normalized_df, "dataset", "C4","Datasets","C4")
+p_C5 <- drawFeatureBoxplot(metrics.normalized_df, "dataset", "C5","Datasets","C5")
+p_convex_hull <- drawFeatureBoxplot(metrics.normalized_df, "dataset", "convex_hull","Datasets","CH")
+p_N10 <- drawFeatureBoxplot(metrics.normalized_df, "dataset", "N10","Datasets","CH10")
+p_buffer_area <- drawFeatureBoxplot(metrics.normalized_df, "dataset", "buffer_area","Datasets","BA")
+p_dim <- drawFeatureBoxplot(metrics.normalized_df, "dataset", "dim","Datasets","DIM")
+
+```
+
+```{r}
+subplot_label <- c('(A)','(B)','(C)','(D)','(E)','(F)','(G)','(H)','(I)')
+png("plots_new/all_features_boxplot.png",  width =12, height = 12, units = 'in', res = 300)
+ggarrange(p_convex_hull, p_N10, p_buffer_area, p_C1, p_C2, p_C3, p_C4, p_C5, p_dim, 
+          ncol=3, nrow=3,  
+          labels='AUTO',
+          font.label = list(size = 16, color = "black", face = "bold", family = NULL)
+          )
+dev.off()
+```
+
+## Remaining Problems in feature analysis:
+
+1. Entropy rate: the big variance in foodstudy and small variance in Taxi. According to the daily GPS # in different datasets, Taxi dataset has less duty cycles than the other datasets. That may be the reason of samll variance. But foodstudy also has less duty cycles, why does it have large variance? Or that's the difference between low-income people and others.
+
+
+## Feature Discrimination
+
+I did feature selection and 5-fold cross-validation using Linear-SVM classifier. The accuracy is **0.79 (+/- 0.07)**. In feature selection, I set the parameter as selecting the 10 best features, and N5 and N10 is less dicriminative than the other features.
+
+
+
+
+
+
