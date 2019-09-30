@@ -1,3 +1,5 @@
+# count_algorithm_2019_Brondeel
+
 ### Reference
 
 Brondeel, R., Kestens, Y., Rahimipour Anaraki, J., Stanley, K., Thierry, B., Fuller, D. Converting raw accelerometer data to activity counts using open source code in MATLAB, Python, and R – a comparison to ActiLife activity counts. 
