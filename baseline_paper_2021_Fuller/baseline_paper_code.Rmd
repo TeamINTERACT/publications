@@ -2,29 +2,132 @@
 title: "Health and Place Paper"
 author: "Daniel Fuller"
 date: "14/12/2020"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+## Code for INTERACT baseline paper
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+To be submitted for a special issue of Health and Place (MoHeaP 2020 special issue). Submission deadline is January 15, 2020. 
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+## Required packages
+```{r}
+library(tidyverse)
 
-```{r cars}
-summary(cars)
+table_maker <<- function(dataset_name, column_name, response_labels){
+      number_table <- dataset_name %>% group_by(get(column_name)) %>%
+            tally()
+      freq_table <- dataset_name %>% select(column_name) %>%
+            table() %>%
+            prop.table() %>%
+            round(digits = 4) * 100
+      full_table <- freq_table %>%  as.data.frame() %>%
+            mutate(Response = response_labels , N = number_table$n) %>%
+            select(Response, N, Percentage = Freq)
+      return(full_table)
+}
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
+## Analysis Plan 
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+1. Health Survey (and Canadian Census Comparisons)
+2. VERITAS
+3. SenseDoc (Accelerometer)
+4. Ethica (Accelerometer)
+5. VERITAS - Sensedoc activity space
+
+## Health Survey Data
+
+```{r}
+data_temp <- NULL
+
+data_temp <- dir(path = "/Users/dfuller/Documents/INTERACT/", full.names = TRUE, pattern = "*2cef601.csv", recursive = TRUE) %>%
+   purrr::map(function(i){
+     dfhx <- read.csv(i, header = TRUE)
+     temp <- bind_rows(data_temp, dfhx)
+   })
+
+individual_data <- bind_rows(data_temp)
+rm(data_temp)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+## Age
+
+```{r}
+age_table <- individual_data %>%
+                group_by(city_id) %>%
+                  summarize(
+                    mean_age = mean(age, na.rm = TRUE), 
+                    sd_age = sd(age, na.rm = TRUE), 
+                    na_count = sum(is.na(age)), 
+                    count = n()
+                  )
+```
+
+## Income
+
+```{r}
+table(individual_data$income)
+
+individual_data$income_recode <- recode(individual_data$income,
+                                        "1" = "No income", 
+                                        "2" = "$1 to $9,999", 
+                                        "3" = "$10,000 to $14,999", 
+                                        "4" = "$15,000 to $19,999", 
+                                        "5" = "$20,000 to $29,999", 
+                                        "6" = "$30,000 to $39,999", 
+                                        "7" = "$40,000 to $49,999", 
+                                        "8" = "$50,000 to $99,999", 
+                                        "9" = "$100,000 to $149,999", 
+                                        "10" = " $150,000 to $199,999", 
+                                        "11" = "$200,000 or more", 
+                                        "77" = "Don't know/prefer no answer")
+
+table(individual_data$income_recode, individual_data$city_id)
+```
+
+## Gender
+
+
+
+Gender
+Education
+Ethnicity
+
+VERITAS 
+Activity Locations (mean, sd)
+
+Physical Activity
+MPVA Minutes
+Sedentary Minutes
+
+Well-Being
+Personal Wellbeing Index-A 
+subjective happiness scale
+
+Ecological Momentary Assessment
+Short Mood Scale
+
+Social Connectedness
+Insert measures here
+
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
+    
+    
