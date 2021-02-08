@@ -936,14 +936,10 @@ bbox_vic
   
   
 vic_int_plot <- ggplot() + 
-                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.015, 0.015), data = vic_sd, alpha = 1) +
+                  geom_point(aes(x = lon, y = lat), data = vic_sd, alpha = 0.51) +
                   scale_fill_gradient2(low="darkred", high = "darkblue") +
-                  geom_sf(data = vic_int_t, aes(colour = AAA)) +
-                  theme_void() +
-                  theme(
-                    legend.justification = c(0, 1),
-                    legend.position = c(0, .95)
-                    )
+                  geom_sf(data = vic_int_t, aes(colour = AAA)) + 
+                  theme_map()
 
 plot(vic_int_plot)
 
@@ -962,72 +958,6 @@ vic_int_plot %>%
     y = 0,
     width = 0.46, 
     height = 0.46)
-
-
-
-
-
-ggdraw(vic_int_plot) +
-  draw_plot(
-    {
-      vic_int_plot + 
-            coord_sf(
-                xlim = sf::st_bbox(vic_int_t)[c(1,3)],
-                ylim = sf::st_bbox(vic_int_t)[c(2,4)],
-                expand = FALSE)
-        theme(legend.position = "none")
-      },
-    # The distance along a (0,1) x-axis to draw the left edge of the plot
-    x = 0.58, 
-    # The distance along a (0,1) y-axis to draw the bottom edge of the plot
-    y = 0,
-    # The width and height of the plot expressed as proportion of the entire ggdraw object
-    width = 0.46, 
-    height = 0.46)
-
-
-
-
-
-vic_sd_sf <- st_as_sf(vic_sd, coords = c("lon", "lat"))
-vic_sd_sf <- st_set_crs(vic_sd_sf, 4326)
-vic_sd_sf <- st_transform(vic_sd_sf, crs = 4326, "+proj=longlat +ellps=WGS84 +datum=WGS84")
-
-
-vic_sd_sf1 <- vic_sd_sf %>%
-                filter(st_intersects(., bbox_vic, sparse = FALSE)[1,])
-
-vic_sd_sf1 <- vic_sd_sf %>%
-                filter(st_intersects(., bbox_vic))
-
-vic_sd_sf$test <- st_intersects(vic_sd_sf, bbox_vic)
-
-table(vic_sd_sf$test)
-
-test1 <- as.data.frame(test)
-
-
-pts = st_sfc(st_point(c(.5,.5)), st_point(c(1.5, 1.5)), st_point(c(2.5, 2.5)))
-pol = st_polygon(list(rbind(c(0,0), c(2,0), c(2,2), c(0,2), c(0,0))))
-(lst = st_intersects(pts, pol))
-  
-pts <- st_sfc(st_point(c(.5,.5)), st_point(c(1.5, 1.5)), st_point(c(2.5, 2.5)))
-pol <- st_polygon(list(rbind(c(0,0), c(2,0), c(2,2), c(0,2), c(0,0))))
-(lst = st_intersects(pts, pol))
-(mat = st_intersects(pts, pol, sparse = FALSE))
-# which points fall inside a polygon?
-apply(mat, 1, any)
-lengths(lst) > 0
-# which points fall inside the first polygon?
-st_intersects(pol, pts)[[1]]  
-  
-  
-  
-  
-
-
-ggplot() + geom_sf(data = vic_int_t, aes(colour = AAA))
-
 
 vic_int_plot <- ggplot() + 
                   geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.015, 0.015), data = vic_sd, alpha = 1) +
