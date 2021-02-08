@@ -18,36 +18,46 @@ To be submitted for a special issue of Health and Place (MoHeaP 2020 special iss
 ## Required packages
 ```{r}
 library(tidyverse)
-
-table_maker <<- function(dataset_name, column_name, response_labels){
-      number_table <- dataset_name %>% group_by(get(column_name)) %>%
-            tally()
-      freq_table <- dataset_name %>% select(column_name) %>%
-            table() %>%
-            prop.table() %>%
-            round(digits = 4) * 100
-      full_table <- freq_table %>%  as.data.frame() %>%
-            mutate(Response = response_labels , N = number_table$n) %>%
-            select(Response, N, Percentage = Freq)
-      return(full_table)
-}
+library(ggplot2)
+library(naniar)
+library(ggmap)
+library(ggthemes)
+library(sf)
+library(rgeos)
+library(cancensus)
+library(cowplot)
 ```
 
 
 ## Analysis Plan 
 
 1. Health Survey (and Canadian Census Comparisons)
-2. VERITAS
+2. Participant data flow
 3. SenseDoc (Accelerometer)
 4. Ethica (Accelerometer)
 5. VERITAS - Sensedoc activity space
+
+## Eligibility Data
+
+```{r}
+data_temp <- NULL
+
+data_temp <- dir(path = "/Users/dfuller/Documents/INTERACT/data/eligibility", full.names = TRUE, pattern = "*1884baf.csv", recursive = TRUE) %>%
+   purrr::map(function(i){
+     dfhx <- read.csv(i, header = TRUE)
+     temp <- bind_rows(data_temp, dfhx)
+   })
+
+elig_data <- bind_rows(data_temp)
+rm(data_temp)
+```
 
 ## Health Survey Data
 
 ```{r}
 data_temp <- NULL
 
-data_temp <- dir(path = "/Users/dfuller/Documents/INTERACT/", full.names = TRUE, pattern = "*2cef601.csv", recursive = TRUE) %>%
+data_temp <- dir(path = "/Users/dfuller/Documents/INTERACT/data/health", full.names = TRUE, pattern = "*1884baf.csv", recursive = TRUE) %>%
    purrr::map(function(i){
      dfhx <- read.csv(i, header = TRUE)
      temp <- bind_rows(data_temp, dfhx)
@@ -57,10 +67,22 @@ individual_data <- bind_rows(data_temp)
 rm(data_temp)
 ```
 
-## Age
+## Joining health and eligibility
 
 ```{r}
-age_table <- individual_data %>%
+data <- left_join(individual_data, elig_data, by = c("interact_id"))
+
+data <- data %>%
+          rename(
+            city_id = city_id.x,
+            date_of_survey = date_of_survey.x
+          )
+```
+
+## Age Survey
+
+```{r}
+age_table <- data %>%
                 group_by(city_id) %>%
                   summarize(
                     mean_age = mean(age, na.rm = TRUE), 
@@ -68,66 +90,1380 @@ age_table <- individual_data %>%
                     na_count = sum(is.na(age)), 
                     count = n()
                   )
+
+data <- data %>%
+          mutate(age_cat = case_when(
+            age <= 19 ~ "15_19",
+            age > 19 & age <= 29 ~ "20_29",
+            age > 29 & age <= 39 ~ "30_39",     
+            age > 39 & age <= 49 ~ "40_49",      
+            age > 59 & age <= 64 ~ "50_64",      
+            age > 64 ~ "65+",  
+           ))
+
+table(data$age_cat, data$age)
+
+table(data$age_cat, data$city_id)
+```
+
+## Age Census
+
+```{r}
+options(cancensus.api_key = "CensusMapper_159fe4a88e8c934fece317e847beef84")
+options(cancensus.cache_path = 'safe data/cache')
+options(cancensus.cache_path = "/Users/dfuller/Desktop/cancensus") ##.rda files will be stored here
+options(scipen = 99, digits = 12)
+
+regions <- c("59933", "47725", "59935", "24462")
+
+age <- find_census_vectors("age", dataset = "CA16", type = "total", query_type = "exact")
+age
+
+age_list <- c("v_CA16_64", "v_CA16_82", "v_CA16_100", "v_CA16_118", "v_CA16_136", "v_CA16_154", "v_CA16_172", "v_CA16_190", "v_CA16_208", "v_CA16_226", "v_CA16_244")
+
+age_census <- get_census(dataset='CA16', regions=list(CMA=regions),
+                          vectors=age_list,
+                          level='CMA', use_cache = TRUE)
+
+age_census <- age_census %>% 
+    gather("age", "pop", 10:20) %>%
+        select("GeoUID", "Population", "Region Name", "age", "pop")   
+
+table(age_census$age)
+
+age_census$age_cat <- recode(age_census$age,
+                                        "v_CA16_64: 15 to 19 years" = "15_19", 
+                                        "v_CA16_82: 20 to 24 years" = "20_29", 
+                                        "v_CA16_100: 25 to 29 years" = "20_29", 
+                                        "v_CA16_118: 30 to 34 years" = "30_39", 
+                                        "v_CA16_136: 35 to 39 years" = "30_39", 
+                                        "v_CA16_154: 40 to 44 years" = "40_49", 
+                                        "v_CA16_172: 45 to 49 years" = "40_49", 
+                                        "v_CA16_190: 50 to 54 years" = "50_64", 
+                                        "v_CA16_208: 55 to 59 years" = "50_64", 
+                                        "v_CA16_226: 60 to 64 years" = "50_64", 
+                                        "v_CA16_244: 65 years and over" = "65+")
+table(age_census$age, age_census$age_cat)
+
+### Create new columns for total within a city and pct of total within a city
+age_census <- age_census %>%
+  group_by(GeoUID) %>%
+  mutate(
+    pct_age_city = (pop / Population*100),
+    )
+
+age_census_table <- age_census %>%
+                    group_by(GeoUID, age_cat) %>%
+                    summarize(
+                      age_pct = sum(pct_age_city, na.rm = TRUE),
+                      city = first(`Region Name`)
+                      )
+age_census_table
 ```
 
 ## Income
 
 ```{r}
-table(individual_data$income)
+income <- find_census_vectors("income", dataset = "CA16", type = "total", query_type = "exact")
+income
 
-individual_data$income_recode <- recode(individual_data$income,
-                                        "1" = "No income", 
-                                        "2" = "$1 to $9,999", 
-                                        "3" = "$10,000 to $14,999", 
-                                        "4" = "$15,000 to $19,999", 
-                                        "5" = "$20,000 to $29,999", 
-                                        "6" = "$30,000 to $39,999", 
-                                        "7" = "$40,000 to $49,999", 
-                                        "8" = "$50,000 to $99,999", 
-                                        "9" = "$100,000 to $149,999", 
-                                        "10" = " $150,000 to $199,999", 
-                                        "11" = "$200,000 or more", 
+income_list <- c("v_CA16_2406", "v_CA16_2407", "v_CA16_2408", "v_CA16_2409", "v_CA16_2410", "v_CA16_2411", "v_CA16_2412", "v_CA16_2413", "v_CA16_2414", "v_CA16_2415", "v_CA16_2416", "v_CA16_2417", "v_CA16_2418", "v_CA16_2419", "v_CA16_2420", "v_CA16_2422", "v_CA16_2423", "v_CA16_2424", "v_CA16_2425")
+
+income_census <- get_census(dataset='CA16', regions=list(CMA=regions),
+                          vectors=income_list,
+                          level='CMA', use_cache = TRUE)
+
+income_census <- income_census %>% 
+    gather("income", "pop", 10:28) %>%
+        select("GeoUID", "Population", "Region Name", "income", "pop")   
+
+table(income_census$income)
+                                  
+income_census$income_cat <- recode(income_census$income,
+                                        "v_CA16_2406: Under $5,000" = "0_19 999", 
+                                        "v_CA16_2407: $5,000 to $9,999" = "0_19 999", 
+                                        "v_CA16_2408: $10,000 to $14,999" = "0_19 999", 
+                                        "v_CA16_2409: $15,000 to $19,999" = "0_19 999", 
+                                        "v_CA16_2410: $20,000 to $24,999" = "20_49 999", 
+                                        "v_CA16_2411: $25,000 to $29,999" = "20_49 999", 
+                                        "v_CA16_2412: $30,000 to $34,999" = "20_49 999",
+                                        "v_CA16_2413: $35,000 to $39,999" = "20_49 999",
+                                        "v_CA16_2414: $40,000 to $44,999" = "20_49 999", 
+                                        "v_CA16_2415: $45,000 to $49,999" = "20_49 999", 
+                                        "v_CA16_2416: $50,000 to $59,999" = "50_99 999", 
+                                        "v_CA16_2417: $60,000 to $69,999" = "50_99 999", 
+                                        "v_CA16_2418: $70,000 to $79,999" = "50_99 999", 
+                                        "v_CA16_2419: $80,000 to $89,999" = "50_99 999", 
+                                        "v_CA16_2420: $90,000 to $99,999" = "50_99 999", 
+                                        "v_CA16_2422: $100,000 to $124,999" = "100_200", 
+                                        "v_CA16_2423: $125,000 to $149,999" = "100_200",                                                              "v_CA16_2424: $150,000 to $199,999" = "100_200",        
+                                        "v_CA16_2425: $200,000 and over" = "200+")
+
+table(income_census$income, income_census$income_cat)
+
+### Create new columns for total within a city and pct of total within a city
+income_census <- income_census %>%
+  group_by(GeoUID) %>%
+  mutate(
+    pct_inc_city = (pop / Population*100),
+    )
+
+income_census_table <- income_census %>%
+                    group_by(GeoUID, income_cat) %>%
+                    summarize(
+                      inc_pct = sum(pct_inc_city, na.rm = TRUE),
+                      city = first(`Region Name`)
+                      )
+income_census_table
+
+
+table(data$income)
+
+data$income_recode <- recode(data$income,
+                                        "1" = "0_19 999", 
+                                        "2" = "0_19 999", 
+                                        "3" = "0_19 999", 
+                                        "4" = "0_19 999", 
+                                        "5" = "20_49 999", 
+                                        "6" = "20_49 999", 
+                                        "7" = "20_49 999", 
+                                        "8" = "50_99 999", 
+                                        "9" = "100_200", 
+                                        "10" = "100_200", 
+                                        "11" = "200+", 
                                         "77" = "Don't know/prefer no answer")
 
-table(individual_data$income_recode, individual_data$city_id)
+table(data$income_recode, data$city_id)
 ```
 
 ## Gender
 
+```{r}
+table(data$gender)
+table(data$gender_vic.x)
+
+data$gender_recode_vic <- recode(data$gender_vic.x,
+                                        "[1, 4]" = "Trans", 
+                                        "[1]" = "Man", 
+                                        "[2]" = "Woman", 
+                                        "[3]" = "Trans", 
+                                        "[4]" = "Trans", 
+                                        "99" = "Don't know/prefer no answer")
+
+data$gender_recode <- recode(data$gender,
+                                        "1" = "Man", 
+                                        "2" = "Woman", 
+                                        "3" = "Trans", 
+                                        "4" = "Trans", 
+                                        "5" = "Genderqueer", 
+                                        "99" = "Don't know/prefer no answer")
+
+table(data$gender_vic.x, data$gender_recode_vic)
+
+table(data$gender, data$gender_recode)
+
+data$gender_recode1 <- paste(data$gender_recode, data$gender_recode_vic)
+
+table(data$gender_recode1)
+
+data$gender_recode2 <- recode(data$gender_recode1,
+                                        "NA Man" = "Man",
+                                        "Man NA" = "Man", 
+                                        "Woman NA" = "Woman", 
+                                        "NA Woman" = "Woman",
+                                        "NA Trans" = "Transgender",
+                                        "Trans NA" = "Transgender",
+                                        "Genderqueer NA" = "Genderqueer", 
+                                        "Don't know/prefer no answer NA" = "Don't know/prefer no answer")
+
+table(data$gender_recode2, data$city_id, useNA = "always")
+```
+
+### Education 
+
+```{r}
+education <- find_census_vectors("education", dataset = "CA16", type = "total", query_type = "exact")
+education
 
 
-Gender
-Education
-Ethnicity
+education_list <- c("v_CA16_5054", "v_CA16_5057", "v_CA16_5060", "v_CA16_5063", "v_CA16_5066", "v_CA16_5069", "v_CA16_5072", "v_CA16_5075", "v_CA16_5078", "v_CA16_5081", "v_CA16_5084", "v_CA16_5087", "v_CA16_5090", "v_CA16_5093")
+
+education_census <- get_census(dataset='CA16', regions=list(CMA=regions),
+                          vectors=education_list,
+                          level='CMA', use_cache = TRUE)
+
+education_census <- education_census %>% 
+    gather("education", "pop", 10:23) %>%
+        select("GeoUID", "Population", "Region Name", "education", "pop")   
+
+table(education_census$education)
+                                  
+education_census$education_cat <- recode(education_census$education,
+              "v_CA16_5054: No certificate, diploma or degree" = "Primary/Elementary", 
+              "v_CA16_5057: Secondary (high) school diploma or equivalency certificate" = "Secondary",
+              "v_CA16_5060: Postsecondary certificate, diploma or degree" = " ", 
+              "v_CA16_5063: Apprenticeship or trades certificate or diploma" = "Trade/Technical", 
+              
+              "v_CA16_5066: Trades certificate or diploma other than Certificate of Apprenticeship or Certificate of Qualification" = "", 
+              "v_CA16_5069: Certificate of Apprenticeship or Certificate of Qualification" = "", 
+              "v_CA16_5072: College, CEGEP or other non-university certificate or diploma" = "Trade/Technical", 
+              "v_CA16_5075: University certificate or diploma below bachelor level" = "University degree", 
+              "v_CA16_5078: University certificate, diploma or degree at bachelor level or above" = "University degree", 
+              "v_CA16_5081: Bachelor's degree" = "University degree", 
+              "v_CA16_5084: University certificate or diploma above bachelor level" = "Graduate degree", 
+              "v_CA16_5087: Degree in medicine, dentistry, veterinary medicine or optometry" = "", 
+              "v_CA16_5090: Master's degree" = "", 
+              "v_CA16_5093: Earned doctorate" = ""
+                      )
+
+table(education_census$education_cat, education_census$education)
+
+
+### Create new columns for total within a city and pct of total within a city
+education_census <- education_census %>%
+  group_by(GeoUID) %>%
+  mutate(
+    pct_educ_city = (pop / Population*100),
+    )
+
+education_census_table <- education_census %>%
+                    group_by(GeoUID, education_cat) %>%
+                    summarize(
+                      educt_pct = sum(pct_educ_city, na.rm = TRUE),
+                      city = first(`Region Name`)
+                      )
+education_census_table
+
+table(data$education)
+
+data$education_recode <- recode(data$education,
+                                        "1" = "Primary/Elementary", 
+                                        "2" = "Secondary", 
+                                        "3" = "Trade/Technical", 
+                                        "4" = "University degree", 
+                                        "5" = "Graduate degree", 
+                                        "77" = "Prefer not to answer")
+
+
+table(data$education, data$education_recode, useNA = "always")
+
+table(data$education_recode, data$city_id)
+
+vic2 <- read_csv("/Users/dfuller/Documents/INTERACT/data/health_2vic_main_1884baf.csv") 
+vic2_new <- read_csv("/Users/dfuller/Documents/INTERACT/data/health_2vicnew_main_1884baf.csv") 
+
+table(vic2$education, useNA = "ifany")
+table(vic2_new$education, useNA = "ifany")
+```
+
+### Ethnicity 
+
+```{}
+table(data$group_id)
+table(data$group_id_mtl)
+table(data$group_id_skt)
+
+data$ethnicity1 <- recode(data$group_id,
+                      "[1, 2, 4]" = "Aboriginal/Asian/White",
+                      "[1, 4]"  = "Aboriginal/White",
+                      "[2, 3]" = "Asian/Black",
+                      "[2, 4]" = "Asian/White",
+                      "[2, 6, 4]" = "Asian/Middle Eastern/White",
+                      "[2, 7]" = "Asian/Other",
+                      "[2]" = "Asian",
+                      "[3]" = "Black",
+                      "[4, 1]" = "White/Aboriginal",
+                      "[4, 2]" = "White/Asian",
+                      "[4, 5]" = "White/Latin American",
+                      "[4, 6]" = "White/Middle Eastern",
+                      "[4, 7]" = "White/Other",
+                      "[4]" = "White",
+                      "[5, 4]" = "Latin American/White",
+                      "[5]" = "Latin American",
+                      "[6]" = "Middle Eastern",
+                      "[7]" = "Other",
+                      "[77]" =  "Prefer not to answer"
+)
+
+
+
+MTL
+
+1	Aboriginal	Autochtone
+2	White	Blanc
+3	South Asian (e.g., East Indian, Pakistani, Sri Lankan, etc.)	Sud-Asiatique (p. ex. Indien de l’Inde, Pakistanais, Sri-Lankais, etc.)
+4	Chinese	Chinois
+5	Black	Noir
+6	Filipino	Philippin
+7	Latin American	Latino-Américain
+8	Arab	Arabe
+9	Southeast Asian (e.g., Vietnamese, Cambodian, Laotian, Thai, etc.)	Asiatique du Sud-Est (p. ex. Vietnamien, Cambodgien, Laotien, Thaïlandais, etc.)
+10	West Asian (e.g., Iranian, Afghan, etc.)	Asiatique occidental (p. ex. Iranien, Afghan, etc.)
+11	Korean	Coréen
+12	Japanese	Japonais
+13	Other:	Autre (Veuillez préciser)
+77	I don’t know/prefer not to answer	Je ne sais pas /je préfère ne pas répondre
+
+SK
+
+1	Indigenous or Aboriginal
+2	White
+3 	South Asian (e.g., East Indian, Pakistani, Sri Lankan, etc.)
+4	Chinese
+5	Black
+6	Filipino
+7	Latin American
+8	Arab
+9	Southeast Asian (e.g., Vietnamese, Cambodian, Laotian, Thai, etc.)
+10	West Asian (e.g., Iranian, Afghan, etc.)
+11	Korean
+12	Japanese
+13	Other
+77	I don’t know/prefer not to answer
+
+
+data$education_recode <- recode(data$education,
+                                        "1" = "Primary/Elementary", 
+                                        "2" = "Secondary", 
+                                        "3" = "Trade/Technical", 
+                                        "4" = "University degree", 
+                                        "5" = "Graduate degree", 
+                                        "77" = "Prefer not to answer")
+
+
+table(data$education, data$education_recode, useNA = "always")
+
+table(data$education_recode, data$city_id)
+```
+
+# Well-Being
+
+### Personal Wellbeing Index-A 
+
+```{r}
+summary(data$pwb_wellbeing)
+table(data$pwb_wellbeing)
+
+pwb_wellbeing_table <- data %>%
+                group_by(city_id) %>%
+                  summarize(
+                    mean_pwb = mean(pwb_wellbeing, na.rm = TRUE), 
+                    sd_pwb = sd(pwb_wellbeing, na.rm = TRUE), 
+                    na_count = sum(is.na(pwb_wellbeing)), 
+                    count = n()
+                  )
+
+pwb_wellbeing_table
+
+summary(data$pwb_vic_wellbeing)
+
+table(data$pwb_vic_wellbeing)
+
+pwb_wellbeing_table_vic <- data %>%
+                group_by(city_id) %>%
+                  summarize(
+                    mean_pwb = mean(pwb_vic_wellbeing, na.rm = TRUE), 
+                    sd_pwb = sd(pwb_vic_wellbeing, na.rm = TRUE), 
+                    na_count = sum(is.na(pwb_vic_wellbeing)), 
+                    count = n()
+                  )
+
+pwb_wellbeing_table_vic
+```
+
+### Subjective happiness scale
+
+```{r}
+summary(data$gwb_happiness)
+table(data$gwb_happiness)
+
+gwb_happiness_table <- data %>%
+                group_by(city_id) %>%
+                  summarize(
+                    mean_happy = mean(gwb_happiness, na.rm = TRUE), 
+                    sd_happy = sd(gwb_happiness, na.rm = TRUE), 
+                    na_count = sum(is.na(gwb_happiness)), 
+                    count = n()
+                  )
+
+gwb_happiness_table
+```
+
+# Social Connectedness
+
+## Sense of Community Belonging
+
+Scale  
+
+1.	Very strong	
+2.	Somewhat strong	
+3.	Somewhat weak	
+4.	Very weak	
+77.	I don’t know
+
+```{r}
+summary(data$belonging)
+table(data$belonging)
+
+data <- data %>%
+          naniar::replace_with_na(replace = list(belonging = c(77, 99)))
+
+table(data$belonging)
+
+belonging_table <- data %>%
+                group_by(city_id) %>%
+                  summarize(
+                    mean_belong = mean(belonging, na.rm = TRUE), 
+                    sd_belong = sd(belonging, na.rm = TRUE), 
+                    na_count = sum(is.na(belonging)), 
+                    count = n()
+                  )
+belonging_table
+```
+
+## Social Cohesion and Trust
+
+Scale 
+
+1. Strongly disagree
+2. Disagree
+3. Neither agree nor disagree
+4. Agree
+5. Strongly agree
+
+```{r}
+summary(data$spat_soc_cohesion)
+table(data$spat_soc_cohesion)
+
+soc_cohesion_table <- data %>%
+                group_by(city_id) %>%
+                  summarize(
+                    mean_soc_cohesion = mean(spat_soc_cohesion, na.rm = TRUE), 
+                    sd_soc_cohesion = sd(spat_soc_cohesion, na.rm = TRUE), 
+                    na_count = sum(is.na(spat_soc_cohesion)), 
+                    count = n()
+                  )
+soc_cohesion_table
+```
+
+# Physical Activity
+
+### Reading in the physical activity data from SenseDoc
+```{r warning=FALSE}
+data_temp <- NULL
+
+data_temp <- dir(path = "/Users/dfuller/Documents/INTERACT/activity_space_gps/raw_data", full.names = TRUE, pattern = "*2020-01-10.csv", recursive = TRUE) %>%
+   purrr::map(function(i){
+     dfhx <- read.csv(i, header = TRUE)
+     temp <- bind_rows(data_temp, dfhx)
+   })
+
+sd_data <- bind_rows(data_temp)
+rm(data_temp)
+table(sd_data$city)
+```
+
+### Reading in the physical activity data from Ethica
+```{r warning=FALSE}
+data_temp <- NULL
+
+data_temp <- dir(path = "/Users/dfuller/Documents/INTERACT/activity_space_gps/raw_data", full.names = TRUE, pattern = "*_ethica.csv", recursive = TRUE) %>%
+   purrr::map(function(i){
+     dfhx <- read.csv(i, header = TRUE)
+     temp <- bind_rows(data_temp, dfhx)
+   })
+
+ethica_data <- bind_rows(data_temp)
+rm(data_temp)
+table(ethica_data$city)
+```
+
+## Some basic cleaning
+
+```{r warning=FALSE}
+# Filter out if they are not in the city, Reason: No CTUID for out of the city
+sd_data <- sd_data %>% filter(in_city == 1)
+ethica_data <- ethica_data %>% filter(in_city == 1)
+```
+
+## Create a date column and add a minutes in census tract by id, date, and census tract column 
+
+```{r}
+#### SenseDoc
+table(sd_data$city_id)
+
+sd_data$date <- sd_data$utcdate %>% as.Date()
+sd_data$minutes <- 1
+
+sd_data <- sd_data %>% 
+  group_by(interact_id, date, city_id) %>% 
+  mutate(
+      minutes_id_date_city = sum(minutes)
+  )
+
+### Ethica
+
+table(ethica_data$city_id)
+
+ethica_data$date <- ethica_data$utcdate %>% as.Date()
+ethica_data$minutes <- 1
+
+ethica_data <- ethica_data %>% 
+  group_by(interact_id, date, city_id) %>% 
+  mutate(
+      minutes_id_date_city = sum(minutes)
+  )
+```
+
+### MPVA Minutes SenseDoc
+
+```{r}
+table(sd_data$activity_levels)
+
+table(sd_data$wearing)
+
+### MVPA Minutes
+sd_data <- sd_data %>%
+	mutate(mvpa = case_when(
+		activity_levels == "light" ~ 0,
+		activity_levels == "sedentary" ~ 0,
+		activity_levels == "moderate" ~ 1,
+		activity_levels == "vigorous" ~ 1
+	))
+
+### Sed Minutes
+sd_data <- sd_data %>%
+	mutate(sed = case_when(
+		activity_levels == "light" ~ 0,
+		activity_levels == "sedentary" ~ 1,
+		activity_levels == "moderate" ~ 0,
+		activity_levels == "vigorous" ~ 0
+	))
+
+### Sed Minutes
+sd_data <- sd_data %>%
+	mutate(light_pa = case_when(
+		activity_levels == "light" ~ 1,
+		activity_levels == "sedentary" ~ 0,
+		activity_levels == "moderate" ~ 0,
+		activity_levels == "vigorous" ~ 0
+	))
+
+sd_data <- sd_data %>% 
+    group_by(interact_id, date, city_id) %>% 
+      mutate(
+        total_mvpa_minutes = sum(mvpa),
+        total_sed_minutes = sum(sed),
+        total_light_pa_minutes = sum(light_pa)
+        )
+
+sd_pa_table <- sd_data %>%
+                group_by(interact_id, date, city_id) %>%
+                  summarize(
+                    time = mean(minutes_id_date_city, na.rm = TRUE),
+                    wearing = mean(wearing, na.rm = TRUE),
+                    mean_mpva_sd = mean(total_mvpa_minutes, na.rm = TRUE), 
+                    sd_mpva_sd = sd(total_mvpa_minutes, na.rm = TRUE), 
+                    mean_sed_sd = mean(total_sed_minutes, na.rm = TRUE), 
+                    sd_sed_sd = sd(total_sed_minutes, na.rm = TRUE), 
+                    mean_light_sd = mean(total_light_pa_minutes, na.rm = TRUE), 
+                    sd_light_sd = sd(total_light_pa_minutes, na.rm = TRUE), 
+                    na_count = sum(is.na(total_mvpa_minutes)), 
+                    count = n()
+                  )
+sd_pa_table
+
+sd_sum_table <- sd_pa_table %>%
+                group_by(city_id) %>%
+                  summarize(
+                    time = mean(time, na.rm = TRUE), 
+                    wearing = mean(wearing, na.rm = TRUE), 
+                    mean_mpva_sd = mean(mean_mpva_sd, na.rm = TRUE), 
+                    mean_sed_sd = mean(mean_sed_sd, na.rm = TRUE), 
+                    mean_light_sd = mean(mean_light_sd, na.rm = TRUE), 
+                    na_count = sum(is.na(time)), 
+                    count = n()
+                  )
+sd_sum_table
+```
+
+### Ethica Activity Figures but city
+
+```{r}
+
+##  formula = y ~ s(x, bs = "cs") with method = "REML".
+
+saskatoon_activity <-  sd_pa_table %>% 
+              filter(city_id == "saskatoon") %>% 
+              ggplot() + 
+                    geom_smooth(aes(x = date, y = mean_light_sd), colour = "black", linetype = "dashed") +
+                    geom_smooth(aes(x = date, y = mean_mpva_sd), colour = "grey") + 
+                    geom_smooth(aes(x = date, y = mean_sed_sd),  colour = "black") +    
+                  scale_x_date(date_labels = "%m-%Y") +
+                  ylim(0, 400) +
+                  theme_classic()
+plot(saskatoon_activity)
+
+ggsave("saskatoon_activity.jpg", dpi = 150, height = 4, width = 6)
+```
+
+```{r}
+montreal_activity <-  sd_pa_table %>% 
+              filter(city_id == "montreal") %>% 
+              ggplot() + 
+                    geom_smooth(aes(x = date, y = mean_light_sd), colour = "black", linetype = "dashed") +
+                    geom_smooth(aes(x = date, y = mean_mpva_sd), colour = "grey") + 
+                    geom_smooth(aes(x = date, y = mean_sed_sd), colour = "black") +    
+                  scale_x_date(date_labels = "%m-%Y") +
+                  ylim(0, 400) +
+                  theme_classic()
+plot(montreal_activity)
+
+ggsave("montreal_activity.jpg", dpi = 150, height = 4, width = 6)
+```
+
+```{r}
+vancouver_activity <-  sd_pa_table %>% 
+              filter(city_id == "vancouver") %>% 
+              ggplot() + 
+                    geom_smooth(aes(x = date, y = mean_light_sd), colour = "black", linetype = "dashed") +
+                    geom_smooth(aes(x = date, y = mean_mpva_sd), colour = "grey") + 
+                    geom_smooth(aes(x = date, y = mean_sed_sd), colour = "black") +           
+                  scale_x_date(date_labels = "%m-%Y") +
+                  ylim(0, 400) +
+                  theme_classic()
+plot(vancouver_activity)
+
+ggsave("vancouver_activity.jpg", dpi = 150, height = 4, width = 6)
+```
+
+```{r}
+victoria_activity <-  sd_pa_table %>% 
+          filter(city_id == "victoria") %>% 
+          ggplot() + 
+                    geom_smooth(aes(x = date, y = mean_light_sd), colour = "black", linetype = "dashed") +
+                    geom_smooth(aes(x = date, y = mean_mpva_sd), colour = "grey") + 
+                    geom_smooth(aes(x = date, y = mean_sed_sd), colour = "black") +     
+                scale_x_date(date_labels = "%m-%Y") +
+                ylim(0, 400) +
+                theme_classic()
+plot(victoria_activity)
+
+ggsave("victoria_activity.jpg", dpi = 150, height = 4, width = 6)
+```
+
+### MPVA Minutes Ethica
+
+```{r}
+table(ethica_data$activity_levels)
+
+table(ethica_data$wearing)
+
+### MVPA Minutes
+ethica_data <- ethica_data %>%
+	mutate(mvpa = case_when(
+		activity_levels == "light" ~ 0,
+		activity_levels == "sedentary" ~ 0,
+		activity_levels == "moderate" ~ 1,
+		activity_levels == "vigorous" ~ 1
+	))
+
+### Sed Minutes
+ethica_data <- ethica_data %>%
+	mutate(sed = case_when(
+		activity_levels == "light" ~ 0,
+		activity_levels == "sedentary" ~ 1,
+		activity_levels == "moderate" ~ 0,
+		activity_levels == "vigorous" ~ 0
+	))
+
+### Sed Minutes
+ethica_data <- ethica_data %>%
+	mutate(light_pa = case_when(
+		activity_levels == "light" ~ 1,
+		activity_levels == "sedentary" ~ 0,
+		activity_levels == "moderate" ~ 0,
+		activity_levels == "vigorous" ~ 0
+	))
+
+ethica_data <- ethica_data %>% 
+    group_by(interact_id, date, city_id) %>% 
+      mutate(
+        total_mvpa_minutes = sum(mvpa),
+        total_sed_minutes = sum(sed),
+        total_light_pa_minutes = sum(light_pa)
+        )
+
+ethica_pa_table <- ethica_data %>%
+                group_by(interact_id, date, city_id) %>%
+                  summarize(
+                    time = mean(minutes_id_date_city, na.rm = TRUE),
+                    wearing = mean(wearing, na.rm = TRUE),
+                    mean_mvpa = mean(total_mvpa_minutes, na.rm = TRUE), 
+                    sd_mpva = sd(total_mvpa_minutes, na.rm = TRUE), 
+                    mean_sed = mean(total_sed_minutes, na.rm = TRUE), 
+                    sd_sed = sd(total_sed_minutes, na.rm = TRUE), 
+                    mean_light = mean(total_light_pa_minutes, na.rm = TRUE), 
+                    sd_light = sd(total_light_pa_minutes, na.rm = TRUE), 
+                    na_count = sum(is.na(total_mvpa_minutes)), 
+                    count = n()
+                  )
+ethica_pa_table
+
+victoria_activity_ethica <-  ethica_pa_table %>% 
+          filter(city_id == "victoria") %>% 
+          ggplot() + 
+                    geom_smooth(aes(x = date, y = mean_light), colour = "black", linetype = "dashed") +
+                    geom_smooth(aes(x = date, y = mean_mvpa), colour = "grey") + 
+                    geom_smooth(aes(x = date, y = mean_sed), colour = "black") +     
+                scale_x_date(date_labels = "%m-%Y") +
+                ylim(0, 50) +
+                theme_classic()
+plot(victoria_activity_ethica)
+
+ggsave("victoria_activity.jpg", dpi = 150, height = 4, width = 6)
+```
+
+ethica_sum_table <- ethica_pa_table %>%
+                group_by(city_id) %>%
+                  summarize(
+                    time = mean(time, na.rm = TRUE), 
+                    wearing = mean(wearing, na.rm = TRUE), 
+                    mean_mvpa = mean(mean_mvpa, na.rm = TRUE), 
+                    mean_sed = mean(mean_sed, na.rm = TRUE), 
+                    mean_light = mean(mean_light, na.rm = TRUE), 
+                    na_count = sum(is.na(time)), 
+                    count = n()
+                  )
+ethica_sum_table
+
 
 VERITAS 
 Activity Locations (mean, sd)
 
-Physical Activity
-MPVA Minutes
-Sedentary Minutes
-
-Well-Being
-Personal Wellbeing Index-A 
-subjective happiness scale
-
-Ecological Momentary Assessment
-Short Mood Scale
-
-Social Connectedness
-Insert measures here
-
-
 ```{r}
+veritas_hull <- read_csv("/Users/dfuller/Documents/INTERACT/veritas_gps/as_cvxhull.csv")
+data_small <- data %>% select(interact_id, city_id)
 
+veritas_hul_city <- left_join(veritas_hull, data_small)
+table(veritas_hul_city$city_id)
+
+veritas_hul_city <- veritas_hul_city %>%
+                      mutate(
+                        pct_gps = intersect_cvxhull_area/gps_cvxhull_area,
+                        pct_veritas = intersect_cvxhull_area/veritas_cvxhull_area
+                      )
+
+summary(veritas_hul_city$pct_veritas)
+summary(veritas_hul_city$pct_gps)
+
+plot_v_hull <- ggplot(veritas_hul_city) + 
+                      geom_boxplot(aes(pct_veritas)) + 
+                      coord_flip() +
+                      facet_wrap(~ city_id) + 
+                      theme_classic()
+plot(plot_v_hull)
+
+ggsave("plot_v_hull.jpg", dpi = 150, height = 4, width = 6)
+
+plot_v_hull_gps <- ggplot(veritas_hul_city) + 
+                      geom_boxplot(aes(pct_gps)) + 
+                      coord_flip() +
+                      facet_wrap(~ city_id) + 
+                      theme_classic()
+plot(plot_v_hull_gps)
+
+ggsave("plot_v_hull_gps.jpg", dpi = 150, height = 4, width = 6)
+
+
+glimpse(veritas_hul_city)
+
+veritas_wearing <- read_csv("/Users/dfuller/Documents/INTERACT/veritas_gps/gps_veritas_wearing.csv")
 ```
 
+# Ecological Momentary Assessment
+
+Short Mood Scale
+
+# Interventions
+
+### Victoria
+
+```{r}
+vic_area <- get_census(dataset='CA16', regions=list(CMA="59933"),
+                          vectors=c("v_CA16_408","v_CA16_409","v_CA16_410"),
+                          level='CMA', use_cache = FALSE, geo_format = 'sf')
+
+sask_2016 <- get_census(dataset='CA16', regions=list(CMA="47725"), 
+                        vectors=c("v_CA16_408","v_CA16_409","v_CA16_410"), 
+                        level='CMA', use_cache = TRUE, geo_format = 'sf')
+ggplot() + geom_sf(data = sask_2016)
+
+vic_2016 <- get_census(dataset='CA16', regions=list(CMA="59935"), 
+                        vectors=c("v_CA16_408","v_CA16_409","v_CA16_410"),
+                       level='CMA', use_cache = TRUE, geo_format = 'sf')
+ggplot() + geom_sf(data = vic_2016)
+
+mtr_2016 <- get_census(dataset='CA16', regions=list(CMA="24462"), 
+                      vectors=c("v_CA16_408","v_CA16_409","v_CA16_410"), 
+                      level='CMA', use_cache = TRUE, geo_format = 'sf')
+ggplot() + geom_sf(data = mtr_2016)
+
+van_2016 <- get_census(dataset='CA16', regions=list(CMA="59933"), 
+                          vectors=c("v_CA16_408","v_CA16_409","v_CA16_410"), 
+                       level='CMA', use_cache = TRUE, geo_format = 'sf')
+ggplot() + geom_sf(data = van_2016)
+```
+
+```{r}
+vic_int <- st_read("/Users/dfuller/Documents/INTERACT/data/intervention/victoria/IBIMS_2017.shp")
+st_crs(vic_int)
+
+vic_int_t <- st_transform(vic_int, crs = 4326, "+proj=longlat +ellps=WGS84 +datum=WGS84")
+st_crs(vic_int_t)
+vic_int_t
+
+bbox_vic <- st_bbox(vic_int_t)
+bbox_vic <- st_as_sfc(st_bbox(vic_int_t))
+bbox_vic <- st_as_sf(bbox_vic, crs = 4326, "+proj=longlat +ellps=WGS84 +datum=WGS84")
+bbox_vic <- st_transform(bbox_vic, crs = 4326, "+proj=longlat +ellps=WGS84 +datum=WGS84")
+bbox_vic
 
 
 
 
 
+  
+  
+vic_int_plot <- ggplot() + 
+                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.015, 0.015), data = vic_sd, alpha = 1) +
+                  scale_fill_gradient2(low="darkred", high = "darkblue") +
+                  geom_sf(data = vic_int_t, aes(colour = AAA)) +
+                  theme_void() +
+                  theme(
+                    legend.justification = c(0, 1),
+                    legend.position = c(0, .95)
+                    )
+
+plot(vic_int_plot)
 
 
-    
-    
+vic_int_plot %>% 
+  ggdraw() +
+  draw_plot(
+    {
+      vic_int_plot + 
+            coord_sf(
+                xlim = sf::st_bbox(vic_int_t)[c(1,3)],
+                ylim = sf::st_bbox(vic_int_t)[c(2,4)]) +
+        theme(legend.position = "none")
+      },
+    x = 0.58, 
+    y = 0,
+    width = 0.46, 
+    height = 0.46)
+
+
+
+
+
+ggdraw(vic_int_plot) +
+  draw_plot(
+    {
+      vic_int_plot + 
+            coord_sf(
+                xlim = sf::st_bbox(vic_int_t)[c(1,3)],
+                ylim = sf::st_bbox(vic_int_t)[c(2,4)],
+                expand = FALSE)
+        theme(legend.position = "none")
+      },
+    # The distance along a (0,1) x-axis to draw the left edge of the plot
+    x = 0.58, 
+    # The distance along a (0,1) y-axis to draw the bottom edge of the plot
+    y = 0,
+    # The width and height of the plot expressed as proportion of the entire ggdraw object
+    width = 0.46, 
+    height = 0.46)
+
+
+
+
+
+vic_sd_sf <- st_as_sf(vic_sd, coords = c("lon", "lat"))
+vic_sd_sf <- st_set_crs(vic_sd_sf, 4326)
+vic_sd_sf <- st_transform(vic_sd_sf, crs = 4326, "+proj=longlat +ellps=WGS84 +datum=WGS84")
+
+
+vic_sd_sf1 <- vic_sd_sf %>%
+                filter(st_intersects(., bbox_vic, sparse = FALSE)[1,])
+
+vic_sd_sf1 <- vic_sd_sf %>%
+                filter(st_intersects(., bbox_vic))
+
+vic_sd_sf$test <- st_intersects(vic_sd_sf, bbox_vic)
+
+table(vic_sd_sf$test)
+
+test1 <- as.data.frame(test)
+
+
+pts = st_sfc(st_point(c(.5,.5)), st_point(c(1.5, 1.5)), st_point(c(2.5, 2.5)))
+pol = st_polygon(list(rbind(c(0,0), c(2,0), c(2,2), c(0,2), c(0,0))))
+(lst = st_intersects(pts, pol))
+  
+pts <- st_sfc(st_point(c(.5,.5)), st_point(c(1.5, 1.5)), st_point(c(2.5, 2.5)))
+pol <- st_polygon(list(rbind(c(0,0), c(2,0), c(2,2), c(0,2), c(0,0))))
+(lst = st_intersects(pts, pol))
+(mat = st_intersects(pts, pol, sparse = FALSE))
+# which points fall inside a polygon?
+apply(mat, 1, any)
+lengths(lst) > 0
+# which points fall inside the first polygon?
+st_intersects(pol, pts)[[1]]  
+  
+  
+  
+  
+
+
+ggplot() + geom_sf(data = vic_int_t, aes(colour = AAA))
+
+
+vic_int_plot <- ggplot() + 
+                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.015, 0.015), data = vic_sd, alpha = 1) +
+                  scale_fill_gradient2(low="darkred", high = "darkblue") +
+                  geom_sf(data = vic_int_t, aes(colour = AAA))  
+
+plot(vic_int_plot)
+
+ggsave("vic_int_plot.jpg", dpi = 150, height = 4, width = 6)
+```
+
+### Vancouver
+
+```{r}
+van_int <- st_read("/Users/dfuller/Documents/INTERACT/data/intervention/vancouver/greenways.shp")
+st_crs(van_int)
+
+table(van_int$name)
+
+van_int$arbutus <- if_else(van_int$name == "Arbutus", 1, 0)
+van_int$arbutus <- as.factor(van_int$arbutus)
+
+ggplot() + geom_sf(data = van_int, aes(colour = arbutus))
+
+van_int_plot <- ggplot() + 
+                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.009, 0.009), data = van_sd, alpha = 1) +
+                  scale_fill_gradient2(low="darkred", high = "darkblue") +
+                  geom_sf(data = van_int, aes(colour = arbutus)) +
+                  xlim(123.4, 122.5) +
+                  ylim(49.7, 49.0) 
+
+plot(van_int_plot)
+
+ggsave("van_int_plot.jpg", dpi = 150, height = 4, width = 6)
+```
+
+### Saskatoon
+
+```{r}
+sk_int <- st_read("/Users/dfuller/Documents/INTERACT/data/intervention/saskatoon/BRT_lines.shp")
+st_crs(van_int)
+
+sk_int_t <- st_transform(sk_int, "+proj=longlat +ellps=WGS84 +datum=WGS84")
+st_crs(sk_int_t)
+sk_int_t
+
+ggplot() + geom_sf(data = sk_int_t, aes(colour = line_name))
+
+sk_int_plot <- ggplot() + 
+                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.009, 0.009), data = sk_sd, alpha = 1) +
+                  scale_fill_gradient2(low="darkred", high = "darkblue") +
+                  geom_sf(data = sk_int_t, aes(colour = line_name)) 
+
+plot(sk_int_plot)
+
+ggsave("sk_int_plot.jpg", dpi = 150, height = 4, width = 6)
+```
+
+# GPS Maps
+
+### Victoria
+
+```{r}
+vic_sd <- sd_data %>% filter(city_id == "victoria" & in_city == 1) 
+
+### Full View
+vic_basemap <- get_map(c(-123.5, 48.5),
+                     source = "google",
+                     maptype = "roadmap", crop = FALSE,
+                     zoom = 10)
+plot(vic_basemap)
+
+vic_points <- ggmap(vic_basemap) + 
+                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.015, 0.015), data = vic_sd, alpha = 1) +
+                  scale_fill_gradient2(low="darkred", high = "darkblue") +
+                  theme_map()
+
+plot(vic_points)
+
+ggsave("vic_points.jpg", dpi = 150, height = 4, width = 6)
+
+### Zoom 
+
+vic_basemap_zoom <- get_map(location = "Victoria, BC, Canada",
+                     source = "google",
+                     maptype = "roadmap", crop = FALSE,
+                     zoom = 13)
+plot(vic_basemap_zoom)
+
+vic_points_zoom <- ggmap(vic_basemap_zoom) + 
+                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.0025, 0.0025), data = vic_sd, alpha = 0.8) +
+                  scale_fill_gradient2(high = "darkblue") +
+                  theme_map()
+
+plot(vic_points_zoom)
+
+ggsave("vic_points_zoom.jpg", dpi = 150, height = 4, width = 6)
+``` 
+
+### Vancouver
+
+```{r}
+van_sd <- sd_data %>% filter(city_id == "vancouver" & in_city == 1) 
+
+### Full View
+van_basemap <- get_map(c(-122.9, 49.2),
+                     source = "google",
+                     maptype = "roadmap", crop = FALSE,
+                     zoom = 10)
+plot(van_basemap)
+
+van_points <- ggmap(van_basemap) + 
+                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.015, 0.015), data = van_sd, alpha = 1) +
+                  scale_fill_gradient2(low="darkred", high = "darkblue") + 
+                  theme_map()
+
+plot(van_points)
+
+ggsave("van_points.jpg", dpi = 150, height = 4, width = 6)
+
+### Zoom 
+
+van_basemap_zoom <- get_map(c(-123.15, 49.27),
+                     source = "google",
+                     maptype = "roadmap", crop = FALSE,
+                     zoom = 13)
+plot(van_basemap_zoom)
+
+van_points_zoom <- ggmap(van_basemap_zoom) + 
+                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.003, 0.003), data = van_sd, alpha = 0.8) +
+                  scale_fill_gradient2(high = "darkblue") + 
+                  theme_map()
+
+plot(van_points_zoom)
+
+ggsave("van_points_zoom.jpg", dpi = 150, height = 4, width = 6)
+``` 
+
+### Saskatoon
+
+```{r}
+sk_sd <- sd_data %>% filter(city_id == "saskatoon" & in_city == 1)
+
+### Full View
+sk_basemap <- get_map(location = "Saskatoon, Saskatchewan, Canada",
+                     source = "google",
+                     maptype = "roadmap", crop = FALSE,
+                     zoom = 10)
+plot(sk_basemap)
+
+sk_points <- ggmap(sk_basemap) + 
+                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.015, 0.015), data = sk_sd, alpha = 1) +
+                  scale_fill_gradient2(low="darkred", high = "darkblue") + 
+                  theme_map()
+plot(sk_points)
+
+ggsave("sk_points.jpg", dpi = 150, height = 4, width = 6)
+
+### Zoom 
+
+sk_basemap_zoom <- get_map(c(-106.65, 52.14),
+                     source = "google",
+                     maptype = "roadmap", crop = FALSE,
+                     zoom = 12)
+plot(sk_basemap_zoom)
+
+sk_points_zoom <- ggmap(sk_basemap_zoom) + 
+                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.004, 0.004), data = sk_sd, alpha = 0.8) +
+                  scale_fill_gradient2(high = "darkblue") + 
+                  theme_map()
+
+plot(sk_points_zoom)
+
+ggsave("sk_points_zoom.jpg", dpi = 150, height = 4, width = 6)
+``` 
+
+### Montreal
+
+```{r}
+mtl_sd <- sd_data %>% filter(city_id == "montreal" & in_city == 1) 
+
+### Full View
+mtl_basemap <- get_map(location = "Montreal, Quebec, Canada",
+                     source = "google",
+                     maptype = "roadmap", crop = FALSE,
+                     zoom = 10)
+plot(mtl_basemap)
+
+mtl_points <- ggmap(mtl_basemap) + 
+                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.015, 0.015), data = mtl_sd, alpha = 1) +
+                  scale_fill_gradient2(low="darkred", high = "darkblue") + 
+                  theme_map()
+
+plot(mtl_points)
+
+ggsave("mtl_points.jpg", dpi = 150, height = 4, width = 6)
+
+### Zoom 
+
+mtl_basemap_zoom <- get_map(c(-73.6, 45.5),
+                     source = "google",
+                     maptype = "roadmap", crop = FALSE,
+                     zoom = 12)
+plot(mtl_basemap_zoom)
+
+mtl_points_zoom <- ggmap(mtl_basemap_zoom) + 
+                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.004, 0.004), data = mtl_sd, alpha = 0.8) +
+                  scale_fill_gradient2(high = "darkblue") + 
+                  theme_map()
+
+plot(mtl_points_zoom)
+
+ggsave("mtl_points_zoom.jpg", dpi = 150, height = 4, width = 6)
+``` 
+
+
+# Participant Data Flow
+
+## Victoria
+
+```{r}
+## Veritas data VIC
+veritas_vic <- read_csv("/Users/dfuller/Documents/INTERACT/data/veritas/veritas_1vic_main_1884baf.csv")
+veritas_vic$veritas <- 1
+
+### Health data 
+data_small$health <- 1 
+
+data_vic <- data_small %>%
+              filter(city_id == "Victoria") %>%
+              select(interact_id, city_id, health) 
+
+length(data_vic$health) ### Number of Health Participants
+
+flow_vic <- left_join(data_vic, veritas_vic)
+
+table(flow_vic$veritas) ### Number of VERITAS Participants
+
+### SenseDoc
+
+vic_sd_small <- vic_sd %>%
+                  group_by(interact_id) %>%
+                  summarize(
+                    interact_id = first(interact_id),
+                    sensedoc = 1, 
+                  )
+
+flow_vic <- left_join(flow_vic, vic_sd_small)
+
+table(flow_vic$sensedoc)  ### Number of SenseDoc Participants
+
+### Ethica
+
+vic_ethica_small <- ethica_data %>%
+                  filter(city_id == "victoria") %>%
+                  group_by(interact_id) %>%
+                  summarize(
+                    interact_id = first(interact_id),
+                    ethica = 1, 
+                  )
+
+flow_vic <- left_join(flow_vic, vic_ethica_small)
+
+table(flow_vic$ethica) ### Number of Ethica Participants
+
+### Ethica-Sensedoc
+
+flow_vic <- flow_vic %>%
+              mutate(
+                sd_ethica = sensedoc + ethica
+              )
+
+table(flow_vic$sensedoc, flow_vic$sd_ethica) ### Number of Ethica and SenseDoc Participants
+```
+
+## Vancouver
+
+```{r}
+## Veritas data Van
+veritas_van <- read_csv("/Users/dfuller/Documents/INTERACT/data/veritas/veritas_1van_main_1884baf.csv")
+veritas_van$veritas <- 1
+
+### Health data 
+data_van <- data_small %>%
+              filter(city_id == "Vancouver") %>%
+              select(interact_id, city_id, health) 
+
+length(data_van$health) ### Number of Health Participants
+
+flow_van <- left_join(data_van, veritas_van)
+
+table(flow_van$veritas) ### Number of VERITAS Participants
+
+### SenseDoc
+
+van_sd_small <- van_sd %>%
+                  group_by(interact_id) %>%
+                  summarize(
+                    interact_id = first(interact_id),
+                    sensedoc = 1, 
+                  )
+
+flow_van <- left_join(flow_van, van_sd_small)
+
+table(flow_van$sensedoc)  ### Number of SenseDoc Participants
+
+### Ethica
+
+van_ethica_small <- ethica_data %>%
+                  filter(city_id == "vancouver") %>%
+                  group_by(interact_id) %>%
+                  summarize(
+                    interact_id = first(interact_id),
+                    ethica = 1, 
+                  )
+
+flow_van <- left_join(flow_van, van_ethica_small)
+
+table(flow_van$ethica) ### Number of Ethica Participants
+
+### Ethica-Sensedoc
+
+flow_van <- flow_van %>%
+              mutate(
+                sd_ethica = sensedoc + ethica
+              )
+
+table(flow_van$sensedoc, flow_van$sd_ethica) ### Number of Ethica and SenseDoc Participants
+```
+
+## Saskatoon
+
+```{r}
+## Veritas data sk
+veritas_sk <- read_csv("/Users/dfuller/Documents/INTERACT/data/veritas/veritas_1skt_main_1884baf.csv")
+veritas_sk$veritas <- 1
+
+### Health data 
+data_sk <- data_small %>%
+              filter(city_id == "Saskatoon") %>%
+              select(interact_id, city_id, health) 
+
+length(data_sk$health) ### Number of Health Participants
+
+flow_sk <- left_join(data_sk, veritas_sk)
+
+table(flow_sk$veritas) ### Number of VERITAS Participants
+
+### SenseDoc
+
+sk_sd_small <- sk_sd %>%
+                  group_by(interact_id) %>%
+                  summarize(
+                    interact_id = first(interact_id),
+                    sensedoc = 1, 
+                  )
+
+flow_sk <- left_join(flow_sk, sk_sd_small)
+
+table(flow_sk$sensedoc)  ### Number of SenseDoc Participants
+
+### Ethica
+
+sk_ethica_small <- ethica_data %>%
+                  filter(city_id == "saskatoon") %>%
+                  group_by(interact_id) %>%
+                  summarize(
+                    interact_id = first(interact_id),
+                    ethica = 1, 
+                  )
+
+flow_sk <- left_join(flow_sk, sk_ethica_small)
+
+table(flow_sk$ethica) ### Number of Ethica Participants
+
+### Ethica-Sensedoc
+
+flow_sk <- flow_sk %>%
+              mutate(
+                sd_ethica = sensedoc + ethica
+              )
+
+table(flow_sk$sensedoc, flow_sk$sd_ethica) ### Number of Ethica and SenseDoc Participants
+```
+
+## Montreal
+
+```{r}
+## Veritas data mtl
+veritas_mtl <- read_csv("/Users/dfuller/Documents/INTERACT/data/veritas/veritas_1mtl_main_1884baf.csv")
+veritas_mtl$veritas <- 1
+
+### Health data 
+data_mtl <- data_small %>%
+              filter(city_id == "Montréal") %>%
+              select(interact_id, city_id, health) 
+
+length(data_mtl$health) ### Number of Health Participants
+
+flow_mtl <- left_join(data_mtl, veritas_mtl)
+
+table(flow_mtl$veritas) ### Number of VERITAS Participants
+
+### SenseDoc
+
+mtl_sd_small <- mtl_sd %>%
+                  group_by(interact_id) %>%
+                  summarize(
+                    interact_id = first(interact_id),
+                    sensedoc = 1, 
+                  )
+
+flow_mtl <- left_join(flow_mtl, mtl_sd_small)
+
+table(flow_mtl$sensedoc)  ### Number of SenseDoc Participants
+
+### Ethica
+
+mtl_ethica_small <- ethica_data %>%
+                  filter(city_id == "montreal") %>%
+                  group_by(interact_id) %>%
+                  summarize(
+                    interact_id = first(interact_id),
+                    ethica = 1, 
+                  )
+
+flow_mtl <- left_join(flow_mtl, mtl_ethica_small)
+
+table(flow_mtl$ethica) ### Number of Ethica Participants
+
+### Ethica-Sensedoc
+
+flow_mtl <- flow_mtl %>%
+              mutate(
+                sd_ethica = sensedoc + ethica
+              )
+
+table(flow_mtl$sensedoc, flow_mtl$sd_ethica) ### Number of Ethica and SenseDoc Participants
+```
