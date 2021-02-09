@@ -50,6 +50,8 @@ data_temp <- dir(path = "/Users/dfuller/Documents/INTERACT/data/eligibility", fu
 
 elig_data <- bind_rows(data_temp)
 rm(data_temp)
+
+elig_data$elig <- 1
 ```
 
 ## Health Survey Data
@@ -65,6 +67,8 @@ data_temp <- dir(path = "/Users/dfuller/Documents/INTERACT/data/health", full.na
 
 individual_data <- bind_rows(data_temp)
 rm(data_temp)
+
+individual_data$health <- 1
 ```
 
 ## Joining health and eligibility
@@ -824,22 +828,6 @@ plot(victoria_activity_ethica)
 ggsave("victoria_activity.jpg", dpi = 150, height = 4, width = 6)
 ```
 
-ethica_sum_table <- ethica_pa_table %>%
-                group_by(city_id) %>%
-                  summarize(
-                    time = mean(time, na.rm = TRUE), 
-                    wearing = mean(wearing, na.rm = TRUE), 
-                    mean_mvpa = mean(mean_mvpa, na.rm = TRUE), 
-                    mean_sed = mean(mean_sed, na.rm = TRUE), 
-                    mean_light = mean(mean_light, na.rm = TRUE), 
-                    na_count = sum(is.na(time)), 
-                    count = n()
-                  )
-ethica_sum_table
-
-
-VERITAS 
-Activity Locations (mean, sd)
 
 ```{r}
 veritas_hull <- read_csv("/Users/dfuller/Documents/INTERACT/veritas_gps/as_cvxhull.csv")
@@ -856,6 +844,15 @@ veritas_hul_city <- veritas_hul_city %>%
 
 summary(veritas_hul_city$pct_veritas)
 summary(veritas_hul_city$pct_gps)
+
+veritas_hul_city %>%
+                  group_by(city_id) %>%
+                      summarize(
+                        mean_veritas = mean(pct_veritas, na.rm = TRUE),
+                        sd_vertis = sd(pct_veritas, na.rm = TRUE),
+                        median_veritas = median(pct_veritas, na.rm = TRUE),
+                        iqr_veritas = IQR(pct_veritas, na.rm = TRUE)
+                      )
 
 plot_v_hull <- ggplot(veritas_hul_city) + 
                       geom_boxplot(aes(pct_veritas)) + 
@@ -890,32 +887,6 @@ Short Mood Scale
 ### Victoria
 
 ```{r}
-vic_area <- get_census(dataset='CA16', regions=list(CMA="59933"),
-                          vectors=c("v_CA16_408","v_CA16_409","v_CA16_410"),
-                          level='CMA', use_cache = FALSE, geo_format = 'sf')
-
-sask_2016 <- get_census(dataset='CA16', regions=list(CMA="47725"), 
-                        vectors=c("v_CA16_408","v_CA16_409","v_CA16_410"), 
-                        level='CMA', use_cache = TRUE, geo_format = 'sf')
-ggplot() + geom_sf(data = sask_2016)
-
-vic_2016 <- get_census(dataset='CA16', regions=list(CMA="59935"), 
-                        vectors=c("v_CA16_408","v_CA16_409","v_CA16_410"),
-                       level='CMA', use_cache = TRUE, geo_format = 'sf')
-ggplot() + geom_sf(data = vic_2016)
-
-mtr_2016 <- get_census(dataset='CA16', regions=list(CMA="24462"), 
-                      vectors=c("v_CA16_408","v_CA16_409","v_CA16_410"), 
-                      level='CMA', use_cache = TRUE, geo_format = 'sf')
-ggplot() + geom_sf(data = mtr_2016)
-
-van_2016 <- get_census(dataset='CA16', regions=list(CMA="59933"), 
-                          vectors=c("v_CA16_408","v_CA16_409","v_CA16_410"), 
-                       level='CMA', use_cache = TRUE, geo_format = 'sf')
-ggplot() + geom_sf(data = van_2016)
-```
-
-```{r}
 vic_int <- st_read("/Users/dfuller/Documents/INTERACT/data/intervention/victoria/IBIMS_2017.shp")
 st_crs(vic_int)
 
@@ -923,46 +894,17 @@ vic_int_t <- st_transform(vic_int, crs = 4326, "+proj=longlat +ellps=WGS84 +datu
 st_crs(vic_int_t)
 vic_int_t
 
-bbox_vic <- st_bbox(vic_int_t)
-bbox_vic <- st_as_sfc(st_bbox(vic_int_t))
-bbox_vic <- st_as_sf(bbox_vic, crs = 4326, "+proj=longlat +ellps=WGS84 +datum=WGS84")
-bbox_vic <- st_transform(bbox_vic, crs = 4326, "+proj=longlat +ellps=WGS84 +datum=WGS84")
-bbox_vic
+vic_int_t$AAA <- vic_int_t$AAA %>% replace_na(0)
 
-
-
-
-
-  
-  
 vic_int_plot <- ggplot() + 
-                  geom_point(aes(x = lon, y = lat), data = vic_sd, alpha = 0.51) +
-                  scale_fill_gradient2(low="darkred", high = "darkblue") +
-                  geom_sf(data = vic_int_t, aes(colour = AAA)) + 
+                  geom_hex(aes(x = lon, y = lat), binwidth = c(0.005, 0.005), data = vic_sd, alpha = 1) +
+                  scale_fill_gradient2(low="lightblue", high = "darkblue") +
+                  geom_sf(data = vic_int_t, aes(colour = AAA)) +
+                  coord_sf(
+                      xlim = sf::st_bbox(vic_int_t)[c(1,3)],
+                      ylim = sf::st_bbox(vic_int_t)[c(2,4)]) + 
+                  scale_color_manual(values=c("#999999", "#000000")) +
                   theme_map()
-
-plot(vic_int_plot)
-
-
-vic_int_plot %>% 
-  ggdraw() +
-  draw_plot(
-    {
-      vic_int_plot + 
-            coord_sf(
-                xlim = sf::st_bbox(vic_int_t)[c(1,3)],
-                ylim = sf::st_bbox(vic_int_t)[c(2,4)]) +
-        theme(legend.position = "none")
-      },
-    x = 0.58, 
-    y = 0,
-    width = 0.46, 
-    height = 0.46)
-
-vic_int_plot <- ggplot() + 
-                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.015, 0.015), data = vic_sd, alpha = 1) +
-                  scale_fill_gradient2(low="darkred", high = "darkblue") +
-                  geom_sf(data = vic_int_t, aes(colour = AAA))  
 
 plot(vic_int_plot)
 
@@ -983,12 +925,14 @@ van_int$arbutus <- as.factor(van_int$arbutus)
 ggplot() + geom_sf(data = van_int, aes(colour = arbutus))
 
 van_int_plot <- ggplot() + 
-                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.009, 0.009), data = van_sd, alpha = 1) +
+                  geom_hex(aes(x = lon, y = lat), binwidth = c(0.005, 0.005), data = van_sd, alpha = 1) +
                   scale_fill_gradient2(low="darkred", high = "darkblue") +
                   geom_sf(data = van_int, aes(colour = arbutus)) +
-                  xlim(123.4, 122.5) +
-                  ylim(49.7, 49.0) 
-
+                  coord_sf(
+                      xlim = sf::st_bbox(van_int)[c(1,3)],
+                      ylim = sf::st_bbox(van_int)[c(2,4)]) + 
+                  scale_color_manual(values=c("#999999", "#000000")) +
+                  theme_map()
 plot(van_int_plot)
 
 ggsave("van_int_plot.jpg", dpi = 150, height = 4, width = 6)
@@ -998,7 +942,7 @@ ggsave("van_int_plot.jpg", dpi = 150, height = 4, width = 6)
 
 ```{r}
 sk_int <- st_read("/Users/dfuller/Documents/INTERACT/data/intervention/saskatoon/BRT_lines.shp")
-st_crs(van_int)
+st_crs(sk_int)
 
 sk_int_t <- st_transform(sk_int, "+proj=longlat +ellps=WGS84 +datum=WGS84")
 st_crs(sk_int_t)
@@ -1007,13 +951,44 @@ sk_int_t
 ggplot() + geom_sf(data = sk_int_t, aes(colour = line_name))
 
 sk_int_plot <- ggplot() + 
-                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.009, 0.009), data = sk_sd, alpha = 1) +
-                  scale_fill_gradient2(low="darkred", high = "darkblue") +
-                  geom_sf(data = sk_int_t, aes(colour = line_name)) 
-
+                  geom_hex(aes(x = lon, y = lat), binwidth = c(0.005, 0.005), data = sk_sd, alpha = 1) +
+                  scale_fill_gradient2(low="lightblue", high = "darkblue") +
+                  geom_sf(data = sk_int_t, aes(colour = line_name)) +
+                  coord_sf(
+                      xlim = sf::st_bbox(sk_int_t)[c(1,3)],
+                      ylim = sf::st_bbox(sk_int_t)[c(2,4)]) + 
+                  scale_color_manual(values=c("#000000", "#000000", "#000000")) +
+                  theme_map()
 plot(sk_int_plot)
 
 ggsave("sk_int_plot.jpg", dpi = 150, height = 4, width = 6)
+```
+
+### Montreal
+
+```{r}
+mtl_cyc <- st_read("/Users/dfuller/Documents/INTERACT/data/intervention/montreal/pistes-cyclables.shp")
+mtl_pet <- st_read("/Users/dfuller/Documents/INTERACT/data/intervention/montreal/rues-pietonnes.shp")
+st_crs(mtl_cyc)
+st_crs(mtl_pet)
+
+mtl_cyc <- st_transform(mtl_cyc, "+proj=longlat +ellps=WGS84 +datum=WGS84")
+
+ggplot() + geom_sf(data = mtl_cyc)
+
+mtl_int_plot <- ggplot() + 
+                  geom_hex(aes(x = lon, y = lat), binwidth = c(0.009, 0.009), data = mtl_sd, alpha = 1) +
+                  scale_fill_gradient2(low="lightblue", high = "darkblue") +
+                  geom_sf(data = mtl_cyc, colour = "#999999") +
+                  geom_point(aes(x = LONGITUDE, y = LATITUDE), data = mtl_pet, alpha = 0.7, colour = "darkgreen", size = 1) +
+                  coord_sf(
+                      xlim = sf::st_bbox(mtl_cyc)[c(1,3)],
+                      ylim = sf::st_bbox(mtl_cyc)[c(2,4)]) + 
+                  #scale_color_manual(values=c("#99999")) +
+                  theme_map()
+plot(mtl_int_plot)
+
+ggsave("mtl_int_plot.jpg", dpi = 150, height = 4, width = 6)
 ```
 
 # GPS Maps
@@ -1103,7 +1078,7 @@ sk_sd <- sd_data %>% filter(city_id == "saskatoon" & in_city == 1)
 
 ### Full View
 sk_basemap <- get_map(location = "Saskatoon, Saskatchewan, Canada",
-                     source = "google",
+                     source = "stamen",
                      maptype = "roadmap", crop = FALSE,
                      zoom = 10)
 plot(sk_basemap)
