@@ -26,6 +26,7 @@ library(sf)
 library(rgeos)
 library(cancensus)
 library(cowplot)
+library(ggspatial)
 ```
 
 
@@ -179,7 +180,7 @@ income_census <- get_census(dataset='CA16', regions=list(CMA=regions),
 
 income_census <- income_census %>% 
     gather("income", "pop", 10:28) %>%
-        select("GeoUID", "Population", "Region Name", "income", "pop")   
+        select("GeoUID", "Households", "Region Name", "income", "pop")   
 
 table(income_census$income)
                                   
@@ -200,7 +201,8 @@ income_census$income_cat <- recode(income_census$income,
                                         "v_CA16_2419: $80,000 to $89,999" = "50_99 999", 
                                         "v_CA16_2420: $90,000 to $99,999" = "50_99 999", 
                                         "v_CA16_2422: $100,000 to $124,999" = "100_200", 
-                                        "v_CA16_2423: $125,000 to $149,999" = "100_200",                                                              "v_CA16_2424: $150,000 to $199,999" = "100_200",        
+                                        "v_CA16_2423: $125,000 to $149,999" = "100_200",                                            
+                                        "v_CA16_2424: $150,000 to $199,999" = "100_200",        
                                         "v_CA16_2425: $200,000 and over" = "200+")
 
 table(income_census$income, income_census$income_cat)
@@ -209,7 +211,7 @@ table(income_census$income, income_census$income_cat)
 income_census <- income_census %>%
   group_by(GeoUID) %>%
   mutate(
-    pct_inc_city = (pop / Population*100),
+    pct_inc_city = (pop / Households*100),
     )
 
 income_census_table <- income_census %>%
@@ -290,34 +292,39 @@ education <- find_census_vectors("education", dataset = "CA16", type = "total", 
 education
 
 
-education_list <- c("v_CA16_5054", "v_CA16_5057", "v_CA16_5060", "v_CA16_5063", "v_CA16_5066", "v_CA16_5069", "v_CA16_5072", "v_CA16_5075", "v_CA16_5078", "v_CA16_5081", "v_CA16_5084", "v_CA16_5087", "v_CA16_5090", "v_CA16_5093")
+education_list <- c("v_CA16_5096", "v_CA16_5099", "v_CA16_5102", "v_CA16_5105", "v_CA16_5108", "v_CA16_5111", "v_CA16_5114", "v_CA16_5117", "v_CA16_5120", "v_CA16_5123", "v_CA16_5126", "v_CA16_5129", "v_CA16_5132", "v_CA16_5135", "v_CA16_5138")
 
 education_census <- get_census(dataset='CA16', regions=list(CMA=regions),
                           vectors=education_list,
                           level='CMA', use_cache = TRUE)
+glimpse(education_census)
 
 education_census <- education_census %>% 
-    gather("education", "pop", 10:23) %>%
-        select("GeoUID", "Population", "Region Name", "education", "pop")   
+    gather("education", "pop", 11:24) %>%
+        select("GeoUID", "Population", "Region Name", "v_CA16_5096: Total - Highest certificate, diploma or degree for the population aged 25 to 64 years in private households - 25% sample data", "education", "pop")   
+
+education_census$pop25 <- education_census$`v_CA16_5096: Total - Highest certificate, diploma or degree for the population aged 25 to 64 years in private households - 25% sample data`
+
+education_census$`v_CA16_5096: Total - Highest certificate, diploma or degree for the population aged 25 to 64 years in private households - 25% sample data` <- NULL
 
 table(education_census$education)
-                                  
+ 
 education_census$education_cat <- recode(education_census$education,
-              "v_CA16_5054: No certificate, diploma or degree" = "Primary/Elementary", 
-              "v_CA16_5057: Secondary (high) school diploma or equivalency certificate" = "Secondary",
-              "v_CA16_5060: Postsecondary certificate, diploma or degree" = " ", 
-              "v_CA16_5063: Apprenticeship or trades certificate or diploma" = "Trade/Technical", 
+              "v_CA16_5099: No certificate, diploma or degree" = "Primary/Elementary", 
+              "v_CA16_5102: Secondary (high) school diploma or equivalency certificate" = "Secondary",
+              "v_CA16_5105: Postsecondary certificate, diploma or degree" = "", 
+              "v_CA16_5108: Apprenticeship or trades certificate or diploma" = "Trade/Technical", 
               
-              "v_CA16_5066: Trades certificate or diploma other than Certificate of Apprenticeship or Certificate of Qualification" = "", 
-              "v_CA16_5069: Certificate of Apprenticeship or Certificate of Qualification" = "", 
-              "v_CA16_5072: College, CEGEP or other non-university certificate or diploma" = "Trade/Technical", 
-              "v_CA16_5075: University certificate or diploma below bachelor level" = "University degree", 
-              "v_CA16_5078: University certificate, diploma or degree at bachelor level or above" = "University degree", 
-              "v_CA16_5081: Bachelor's degree" = "University degree", 
-              "v_CA16_5084: University certificate or diploma above bachelor level" = "Graduate degree", 
-              "v_CA16_5087: Degree in medicine, dentistry, veterinary medicine or optometry" = "", 
-              "v_CA16_5090: Master's degree" = "", 
-              "v_CA16_5093: Earned doctorate" = ""
+              "v_CA16_5111: Trades certificate or diploma other than Certificate of Apprenticeship or Certificate of Qualification" = "", 
+              "v_CA16_5114: Certificate of Apprenticeship or Certificate of Qualification" = "", 
+              "v_CA16_5117: College, CEGEP or other non-university certificate or diploma" = "Trade/Technical", 
+              "v_CA16_5120: University certificate or diploma below bachelor level" = "", 
+              "v_CA16_5123: University certificate, diploma or degree at bachelor level or above" = "University degree", 
+              "v_CA16_5126: Bachelor's degree" = "", 
+              "v_CA16_5129: University certificate or diploma above bachelor level" = "Graduate degree", 
+              "v_CA16_5132: Degree in medicine, dentistry, veterinary medicine or optometry" = "", 
+              "v_CA16_5135: Master's degree" = "", 
+              "v_CA16_5138: Earned doctorate" = ""
                       )
 
 table(education_census$education_cat, education_census$education)
@@ -327,7 +334,7 @@ table(education_census$education_cat, education_census$education)
 education_census <- education_census %>%
   group_by(GeoUID) %>%
   mutate(
-    pct_educ_city = (pop / Population*100),
+    pct_educ_city = (pop / pop25*100),
     )
 
 education_census_table <- education_census %>%
@@ -362,82 +369,152 @@ table(vic2_new$education, useNA = "ifany")
 
 ### Ethnicity 
 
-```{}
-table(data$group_id)
-table(data$group_id_mtl)
-table(data$group_id_skt)
+```{r}
+ethnicity <- find_census_vectors("minority", dataset = "CA16", type = "total", query_type = "semantic")
+ethnicity
 
-data$ethnicity1 <- recode(data$group_id,
-                      "[1, 2, 4]" = "Aboriginal/Asian/White",
-                      "[1, 4]"  = "Aboriginal/White",
-                      "[2, 3]" = "Asian/Black",
-                      "[2, 4]" = "Asian/White",
-                      "[2, 6, 4]" = "Asian/Middle Eastern/White",
-                      "[2, 7]" = "Asian/Other",
-                      "[2]" = "Asian",
-                      "[3]" = "Black",
-                      "[4, 1]" = "White/Aboriginal",
-                      "[4, 2]" = "White/Asian",
-                      "[4, 5]" = "White/Latin American",
-                      "[4, 6]" = "White/Middle Eastern",
-                      "[4, 7]" = "White/Other",
-                      "[4]" = "White",
-                      "[5, 4]" = "Latin American/White",
-                      "[5]" = "Latin American",
-                      "[6]" = "Middle Eastern",
-                      "[7]" = "Other",
-                      "[77]" =  "Prefer not to answer"
-)
+ethnicity_list <- c("v_CA16_3954", "v_CA16_3957", "v_CA16_3960", "v_CA16_3963", "v_CA16_3966", "v_CA16_3969", "v_CA16_3972", "v_CA16_3975", "v_CA16_3978", "v_CA16_3981", "v_CA16_3984", "v_CA16_3987", "v_CA16_3996", "v_CA16_4002", "v_CA16_4005", "v_CA16_4008", "v_CA16_4011")
 
+ethnicity_census <- get_census(dataset='CA16', regions=list(CMA=regions),
+                          vectors=ethnicity_list,
+                          level='CMA', use_cache = TRUE)
+glimpse(ethnicity_census)
 
+ethnicity_census <- ethnicity_census %>% 
+    gather("ethnicity", "pop", 12:26) %>%
+        select("GeoUID", "Population", "Region Name", "ethnicity", "pop")   
 
-MTL
+table(ethnicity_census$ethnicity)
 
-1	Aboriginal	Autochtone
-2	White	Blanc
-3	South Asian (e.g., East Indian, Pakistani, Sri Lankan, etc.)	Sud-Asiatique (p. ex. Indien de l’Inde, Pakistanais, Sri-Lankais, etc.)
-4	Chinese	Chinois
-5	Black	Noir
-6	Filipino	Philippin
-7	Latin American	Latino-Américain
-8	Arab	Arabe
-9	Southeast Asian (e.g., Vietnamese, Cambodian, Laotian, Thai, etc.)	Asiatique du Sud-Est (p. ex. Vietnamien, Cambodgien, Laotien, Thaïlandais, etc.)
-10	West Asian (e.g., Iranian, Afghan, etc.)	Asiatique occidental (p. ex. Iranien, Afghan, etc.)
-11	Korean	Coréen
-12	Japanese	Japonais
-13	Other:	Autre (Veuillez préciser)
-77	I don’t know/prefer not to answer	Je ne sais pas /je préfère ne pas répondre
-
-SK
-
-1	Indigenous or Aboriginal
-2	White
-3 	South Asian (e.g., East Indian, Pakistani, Sri Lankan, etc.)
-4	Chinese
-5	Black
-6	Filipino
-7	Latin American
-8	Arab
-9	Southeast Asian (e.g., Vietnamese, Cambodian, Laotian, Thai, etc.)
-10	West Asian (e.g., Iranian, Afghan, etc.)
-11	Korean
-12	Japanese
-13	Other
-77	I don’t know/prefer not to answer
+ethnicity_census$ethnicity_cat <- recode(ethnicity_census$ethnicity,
+              "v_CA16_3960: South Asian" = "Asian", 
+              "v_CA16_3963: Chinese" = "Asian",
+              "v_CA16_3966: Black" = "Black", 
+              "v_CA16_3969: Filipino" = "Asian", 
+              "v_CA16_3972: Latin American" = "Latin American", 
+              "v_CA16_3975: Arab" = "Middle Eastern", 
+              "v_CA16_3978: Southeast Asian" = "Asian", 
+              "v_CA16_3981: West Asian" = "Asian", 
+              "v_CA16_3984: Korean" = "Asian", 
+              "v_CA16_3987: Japanese" = "Asian", 
+              "v_CA16_3996: Not a visible minority" = "White", 
+              "v_CA16_4002: North American Aboriginal origins" = "Indigenous", 
+              "v_CA16_4005: First Nations (North American Indian)" = "", 
+              "v_CA16_4008: Inuit" = "",
+              "v_CA16_4011: Métis" = "",              
+                      )
 
 
-data$education_recode <- recode(data$education,
-                                        "1" = "Primary/Elementary", 
-                                        "2" = "Secondary", 
-                                        "3" = "Trade/Technical", 
-                                        "4" = "University degree", 
-                                        "5" = "Graduate degree", 
-                                        "77" = "Prefer not to answer")
+table(ethnicity_census$ethnicity_cat, ethnicity_census$ethnicity)
 
+### Create new columns for total within a city and pct of total within a city
+ethnicity_census <- ethnicity_census %>%
+  group_by(GeoUID) %>%
+  mutate(
+    pct_eth_city = (pop / Population*100),
+    )
 
-table(data$education, data$education_recode, useNA = "always")
+ethnicity_census_table <- ethnicity_census %>%
+                    group_by(GeoUID, ethnicity_cat) %>%
+                    summarize(
+                      eth_pct = sum(pct_eth_city, na.rm = TRUE),
+                      city = first(`Region Name`)
+                      )
+ethnicity_census_table
 
-table(data$education_recode, data$city_id)
+### White
+data <- data %>%
+          mutate(white = case_when(
+            group_id_4 == 1 ~ 1,
+            data$group_id_mtl_2 == 1 ~ 1,
+            data$group_id_skt_2 == 1 ~ 1
+          ))
+
+table(data$white, data$city_id)
+
+### Asian
+data <- data %>%
+          mutate(asian = case_when(
+            group_id_2 == 1 ~ 1,
+            data$group_id_mtl_3 == 1 ~ 1,
+            data$group_id_mtl_4 == 1 ~ 1,
+            data$group_id_mtl_6 == 1 ~ 1,
+            data$group_id_mtl_9 == 1 ~ 1,
+            data$group_id_mtl_11 == 1 ~ 1,
+            data$group_id_mtl_12 == 1 ~ 1,            
+            data$group_id_skt_3 == 1 ~ 1,
+            data$group_id_skt_4 == 1 ~ 1,
+            data$group_id_skt_6 == 1 ~ 1,
+            data$group_id_skt_9 == 1 ~ 1,
+            data$group_id_skt_11 == 1 ~ 1,
+            data$group_id_skt_12 == 1 ~ 1
+          ))
+
+table(data$asian, data$city_id)
+
+### Indigenous
+data <- data %>%
+          mutate(indigenous = case_when(
+            group_id_1 == 1 ~ 1,
+            data$group_id_mtl_1 == 1 ~ 1,
+            data$group_id_skt_1 == 1 ~ 1
+          ))
+
+table(data$indigenous, data$city_id)
+
+### Black
+data <- data %>%
+          mutate(black = case_when(
+            group_id_3 == 1 ~ 1,
+            data$group_id_mtl_5 == 1 ~ 1,
+            data$group_id_skt_5 == 1 ~ 1
+          ))
+
+table(data$black, data$city_id)
+
+### Latin American
+data <- data %>%
+          mutate(latin_american = case_when(
+            group_id_5 == 1 ~ 1,
+            data$group_id_mtl_7 == 1 ~ 1,
+            data$group_id_skt_4 == 1 ~ 1
+          ))
+
+table(data$latin_american, data$city_id)
+
+### Middle Eastern
+data <- data %>%
+          mutate(middle_eastern = case_when(
+            group_id_6 == 1 ~ 1,
+            data$group_id_mtl_8 == 1 ~ 1,
+            data$group_id_mtl_10 == 1 ~ 1,
+            data$group_id_skt_8 == 1 ~ 1,
+            data$group_id_skt_10 == 1 ~ 1
+          ))
+
+table(data$middle_eastern, data$city_id)
+
+### Other Ethnicity
+
+data <- data %>%
+          mutate(other_ethnicity = case_when(
+            group_id_7 == 1 ~ 1,
+            data$group_id_mtl_13 == 1 ~ 1,
+            data$group_id_skt_13 == 1 ~ 1
+          ))
+
+table(data$other_ethnicity, data$city_id)
+
+### No Answer
+
+data <- data %>%
+          mutate(no_answer = case_when(
+            group_id_77 == 1 ~ 1,
+            data$group_id_mtl_77 == 1 ~ 1,
+            data$group_id_skt_77 == 1 ~ 1
+          ))
+
+table(data$no_answer, data$city_id)
 ```
 
 # Well-Being
@@ -703,8 +780,9 @@ saskatoon_activity <-  sd_pa_table %>%
                     geom_smooth(aes(x = date, y = mean_light_sd), colour = "black", linetype = "dashed") +
                     geom_smooth(aes(x = date, y = mean_mpva_sd), colour = "grey") + 
                     geom_smooth(aes(x = date, y = mean_sed_sd),  colour = "black") +    
-                  scale_x_date(date_labels = "%m-%Y") +
+                  scale_x_date(date_breaks = "1 month", date_labels = "%m-%Y") +
                   ylim(0, 400) +
+                  labs(x = "Date", y = "Minutes") +
                   theme_classic()
 plot(saskatoon_activity)
 
@@ -718,8 +796,9 @@ montreal_activity <-  sd_pa_table %>%
                     geom_smooth(aes(x = date, y = mean_light_sd), colour = "black", linetype = "dashed") +
                     geom_smooth(aes(x = date, y = mean_mpva_sd), colour = "grey") + 
                     geom_smooth(aes(x = date, y = mean_sed_sd), colour = "black") +    
-                  scale_x_date(date_labels = "%m-%Y") +
+                  scale_x_date(date_breaks = "1 month", date_labels = "%m-%Y") +
                   ylim(0, 400) +
+                  labs(x = "Date", y = "Minutes") +
                   theme_classic()
 plot(montreal_activity)
 
@@ -733,8 +812,9 @@ vancouver_activity <-  sd_pa_table %>%
                     geom_smooth(aes(x = date, y = mean_light_sd), colour = "black", linetype = "dashed") +
                     geom_smooth(aes(x = date, y = mean_mpva_sd), colour = "grey") + 
                     geom_smooth(aes(x = date, y = mean_sed_sd), colour = "black") +           
-                  scale_x_date(date_labels = "%m-%Y") +
+                  scale_x_date(date_breaks = "1 month", date_labels = "%m-%Y") +
                   ylim(0, 400) +
+                  labs(x = "Date", y = "Minutes") +  
                   theme_classic()
 plot(vancouver_activity)
 
@@ -748,8 +828,9 @@ victoria_activity <-  sd_pa_table %>%
                     geom_smooth(aes(x = date, y = mean_light_sd), colour = "black", linetype = "dashed") +
                     geom_smooth(aes(x = date, y = mean_mpva_sd), colour = "grey") + 
                     geom_smooth(aes(x = date, y = mean_sed_sd), colour = "black") +     
-                scale_x_date(date_labels = "%m-%Y") +
+                scale_x_date(date_breaks = "1 month", date_labels = "%m-%Y") +
                 ylim(0, 400) +
+                labs(x = "Date", y = "Minutes") +
                 theme_classic()
 plot(victoria_activity)
 
@@ -887,6 +968,8 @@ Short Mood Scale
 ### Victoria
 
 ```{r}
+vic_sd <- sd_data %>% filter(city_id == "victoria" & in_city == 1) 
+
 vic_int <- st_read("/Users/dfuller/Documents/INTERACT/data/intervention/victoria/IBIMS_2017.shp")
 st_crs(vic_int)
 
@@ -898,12 +981,13 @@ vic_int_t$AAA <- vic_int_t$AAA %>% replace_na(0)
 
 vic_int_plot <- ggplot() + 
                   geom_hex(aes(x = lon, y = lat), binwidth = c(0.005, 0.005), data = vic_sd, alpha = 1) +
-                  scale_fill_gradient2(low="lightblue", high = "darkblue") +
+                  scale_fill_gradient2(name="Count of GPS points", low="lightblue", high = "darkblue") +
                   geom_sf(data = vic_int_t, aes(colour = AAA)) +
                   coord_sf(
                       xlim = sf::st_bbox(vic_int_t)[c(1,3)],
                       ylim = sf::st_bbox(vic_int_t)[c(2,4)]) + 
-                  scale_color_manual(values=c("#999999", "#000000")) +
+                  scale_color_manual(name="Cycling Infrascture", labels=c("Existing", "AAA"), values=c("grey80", "black")) +
+                  annotation_scale() + 
                   theme_map()
 
 plot(vic_int_plot)
@@ -914,6 +998,8 @@ ggsave("vic_int_plot.jpg", dpi = 150, height = 4, width = 6)
 ### Vancouver
 
 ```{r}
+van_sd <- sd_data %>% filter(city_id == "vancouver" & in_city == 1) 
+
 van_int <- st_read("/Users/dfuller/Documents/INTERACT/data/intervention/vancouver/greenways.shp")
 st_crs(van_int)
 
@@ -926,12 +1012,13 @@ ggplot() + geom_sf(data = van_int, aes(colour = arbutus))
 
 van_int_plot <- ggplot() + 
                   geom_hex(aes(x = lon, y = lat), binwidth = c(0.005, 0.005), data = van_sd, alpha = 1) +
-                  scale_fill_gradient2(low="darkred", high = "darkblue") +
+                  scale_fill_gradient2(name="Count of GPS points", low="lightblue", high = "darkblue") +
                   geom_sf(data = van_int, aes(colour = arbutus)) +
                   coord_sf(
                       xlim = sf::st_bbox(van_int)[c(1,3)],
                       ylim = sf::st_bbox(van_int)[c(2,4)]) + 
-                  scale_color_manual(values=c("#999999", "#000000")) +
+                  scale_color_manual(name="Greenways", labels=c("Existing", "Arbutus"), values=c("grey80", "black")) +
+                  annotation_scale() + 
                   theme_map()
 plot(van_int_plot)
 
@@ -941,6 +1028,8 @@ ggsave("van_int_plot.jpg", dpi = 150, height = 4, width = 6)
 ### Saskatoon
 
 ```{r}
+sk_sd <- sd_data %>% filter(city_id == "saskatoon" & in_city == 1) 
+
 sk_int <- st_read("/Users/dfuller/Documents/INTERACT/data/intervention/saskatoon/BRT_lines.shp")
 st_crs(sk_int)
 
@@ -952,12 +1041,13 @@ ggplot() + geom_sf(data = sk_int_t, aes(colour = line_name))
 
 sk_int_plot <- ggplot() + 
                   geom_hex(aes(x = lon, y = lat), binwidth = c(0.005, 0.005), data = sk_sd, alpha = 1) +
-                  scale_fill_gradient2(low="lightblue", high = "darkblue") +
+                  scale_fill_gradient2(name="Count of GPS points", low="lightblue", high = "darkblue") +
                   geom_sf(data = sk_int_t, aes(colour = line_name)) +
                   coord_sf(
                       xlim = sf::st_bbox(sk_int_t)[c(1,3)],
                       ylim = sf::st_bbox(sk_int_t)[c(2,4)]) + 
-                  scale_color_manual(values=c("#000000", "#000000", "#000000")) +
+                  scale_color_manual(name="BRT Routes", labels=c("Route 1", "Route 2", "Route 3"), values=c("grey20", "grey50", "grey80")) +
+                  annotation_scale() + 
                   theme_map()
 plot(sk_int_plot)
 
@@ -967,6 +1057,8 @@ ggsave("sk_int_plot.jpg", dpi = 150, height = 4, width = 6)
 ### Montreal
 
 ```{r}
+mtl_sd <- sd_data %>% filter(city_id == "montreal" & in_city == 1) 
+
 mtl_cyc <- st_read("/Users/dfuller/Documents/INTERACT/data/intervention/montreal/pistes-cyclables.shp")
 mtl_pet <- st_read("/Users/dfuller/Documents/INTERACT/data/intervention/montreal/rues-pietonnes.shp")
 st_crs(mtl_cyc)
@@ -978,13 +1070,13 @@ ggplot() + geom_sf(data = mtl_cyc)
 
 mtl_int_plot <- ggplot() + 
                   geom_hex(aes(x = lon, y = lat), binwidth = c(0.009, 0.009), data = mtl_sd, alpha = 1) +
-                  scale_fill_gradient2(low="lightblue", high = "darkblue") +
-                  geom_sf(data = mtl_cyc, colour = "#999999") +
+                  scale_fill_gradient2(name="Count of GPS points", low="lightblue", high = "darkblue") +
+                  geom_sf(data = mtl_cyc, aes(colour = Ville_MTL), alpha = 0.5) +
                   geom_point(aes(x = LONGITUDE, y = LATITUDE), data = mtl_pet, alpha = 0.7, colour = "darkgreen", size = 1) +
                   coord_sf(
                       xlim = sf::st_bbox(mtl_cyc)[c(1,3)],
                       ylim = sf::st_bbox(mtl_cyc)[c(2,4)]) + 
-                  #scale_color_manual(values=c("#99999")) +
+                  scale_color_manual(name="Existing Cycling Routes", labels=c("Montreal", "Not Montreal"), values=c("grey20", "grey50")) +                  annotation_scale() + 
                   theme_map()
 plot(mtl_int_plot)
 
@@ -996,8 +1088,6 @@ ggsave("mtl_int_plot.jpg", dpi = 150, height = 4, width = 6)
 ### Victoria
 
 ```{r}
-vic_sd <- sd_data %>% filter(city_id == "victoria" & in_city == 1) 
-
 ### Full View
 vic_basemap <- get_map(c(-123.5, 48.5),
                      source = "google",
@@ -1035,8 +1125,6 @@ ggsave("vic_points_zoom.jpg", dpi = 150, height = 4, width = 6)
 ### Vancouver
 
 ```{r}
-van_sd <- sd_data %>% filter(city_id == "vancouver" & in_city == 1) 
-
 ### Full View
 van_basemap <- get_map(c(-122.9, 49.2),
                      source = "google",
@@ -1074,11 +1162,9 @@ ggsave("van_points_zoom.jpg", dpi = 150, height = 4, width = 6)
 ### Saskatoon
 
 ```{r}
-sk_sd <- sd_data %>% filter(city_id == "saskatoon" & in_city == 1)
-
 ### Full View
 sk_basemap <- get_map(location = "Saskatoon, Saskatchewan, Canada",
-                     source = "stamen",
+                     source = "google",
                      maptype = "roadmap", crop = FALSE,
                      zoom = 10)
 plot(sk_basemap)
@@ -1112,8 +1198,6 @@ ggsave("sk_points_zoom.jpg", dpi = 150, height = 4, width = 6)
 ### Montreal
 
 ```{r}
-mtl_sd <- sd_data %>% filter(city_id == "montreal" & in_city == 1) 
-
 ### Full View
 mtl_basemap <- get_map(location = "Montreal, Quebec, Canada",
                      source = "google",
