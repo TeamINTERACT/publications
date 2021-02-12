@@ -19,6 +19,7 @@ To be submitted for a special issue of Health and Place (MoHeaP 2020 special iss
 ## Required packages
 ```{r}
 library(tidyverse)
+library(lubridate)
 library(ggplot2)
 library(naniar)
 library(ggmap)
@@ -28,6 +29,7 @@ library(rgeos)
 library(cancensus)
 library(cowplot)
 library(ggspatial)
+library(knitr)
 ```
 
 
@@ -97,19 +99,38 @@ age_table <- data %>%
                     count = n()
                   )
 
+data$birth_date <- ymd(data$birth_date)
+data$birth_year <- year(data$birth_date)
+
+data$age_sk <- 2021 - data$birth_year
+
+table(data$age_sk)
+
+data$age_sk <- as.numeric(data$age_sk)
+
 data <- data %>%
-          mutate(age_cat = case_when(
+          mutate(age_recode = case_when(
             age <= 19 ~ "15_19",
             age > 19 & age <= 29 ~ "20_29",
             age > 29 & age <= 39 ~ "30_39",     
             age > 39 & age <= 49 ~ "40_49",      
             age > 59 & age <= 64 ~ "50_64",      
-            age > 64 ~ "65+",  
+            age > 64 ~ "65+"  
            ))
 
-table(data$age_cat, data$age)
+data <- data %>%
+          mutate(age_sk_recode = case_when(
+            age_sk <= 19 ~ "15_19",
+            age_sk > 19 & age_sk <= 29 ~ "20_29",
+            age_sk > 29 & age_sk <= 39 ~ "30_39",     
+            age_sk > 39 & age_sk <= 49 ~ "40_49",      
+            age_sk > 59 & age_sk <= 64 ~ "50_64",      
+            age_sk > 64 ~ "65+"  
+           ))
 
-table(data$age_cat, data$city_id)
+table(data$age_recode, data$age)
+
+table(data$age_sk_recode, data$city_id)
 ```
 
 ## Age Census
@@ -395,7 +416,7 @@ ethnicity_census$ethnicity_cat <- recode(ethnicity_census$ethnicity,
               "v_CA16_3972: Latin American" = "Latin American", 
               "v_CA16_3975: Arab" = "Middle Eastern", 
               "v_CA16_3978: Southeast Asian" = "Asian", 
-              "v_CA16_3981: West Asian" = "Asian", 
+              "v_CA16_3981: West Asian" = "Middle Eastern", 
               "v_CA16_3984: Korean" = "Asian", 
               "v_CA16_3987: Japanese" = "Asian", 
               "v_CA16_3996: Not a visible minority" = "White", 
@@ -634,7 +655,7 @@ soc_cohesion_table
 ```{r warning=FALSE}
 data_temp <- NULL
 
-data_temp <- dir(path = "/Users/dfuller/Documents/INTERACT/activity_space_gps/raw_data", full.names = TRUE, pattern = "*2020-01-10.csv", recursive = TRUE) %>%
+data_temp <- dir(path = "/Users/dfuller/Documents/INTERACT/data/sensors/", full.names = TRUE, pattern = "*_sd.csv", recursive = TRUE) %>%
    purrr::map(function(i){
      dfhx <- read.csv(i, header = TRUE)
      temp <- bind_rows(data_temp, dfhx)
@@ -649,7 +670,7 @@ table(sd_data$city)
 ```{r warning=FALSE}
 data_temp <- NULL
 
-data_temp <- dir(path = "/Users/dfuller/Documents/INTERACT/activity_space_gps/raw_data", full.names = TRUE, pattern = "*_ethica.csv", recursive = TRUE) %>%
+data_temp <- dir(path = "/Users/dfuller/Documents/INTERACT/data/sensors/", full.names = TRUE, pattern = "*_ethica.csv", recursive = TRUE) %>%
    purrr::map(function(i){
      dfhx <- read.csv(i, header = TRUE)
      temp <- bind_rows(data_temp, dfhx)
@@ -664,8 +685,24 @@ table(ethica_data$city)
 
 ```{r warning=FALSE}
 # Filter out if they are not in the city, Reason: No CTUID for out of the city
-sd_data <- sd_data %>% filter(in_city == 1)
-ethica_data <- ethica_data %>% filter(in_city == 1)
+sd_data <- sd_data %>% filter(in_city == 1 & wearing == 1)
+ethica_data <- ethica_data %>% filter(in_city == 1& wearing == 1)
+
+sd_data <- sd_data %>%
+	mutate(activity_levels = case_when(
+		x_count < 100 ~ "sedentary",
+		x_count >= 100 & x_count <= 1951 ~ "light",
+		x_count >= 1951 & x_count <= 5724 ~ "moderate",
+	  x_count >= 5725 ~ "vigorous"
+	))
+
+ethica_data <- ethica_data %>%
+	mutate(activity_levels = case_when(
+		x_count < 100 ~ "sedentary",
+		x_count >= 100 & x_count <= 1951 ~ "light",
+		x_count >= 1951 & x_count <= 5724 ~ "moderate",
+	  x_count >= 5725 ~ "vigorous"
+	))
 ```
 
 ## Create a date column and add a minutes in census tract by id, date, and census tract column 
@@ -769,7 +806,7 @@ sd_sum_table <- sd_pa_table %>%
 sd_sum_table
 ```
 
-### Ethica Activity Figures but city
+### SD Activity Figures by city
 
 ```{r}
 
@@ -886,7 +923,7 @@ ethica_pa_table <- ethica_data %>%
                     time = mean(minutes_id_date_city, na.rm = TRUE),
                     wearing = mean(wearing, na.rm = TRUE),
                     mean_mvpa = mean(total_mvpa_minutes, na.rm = TRUE), 
-                    sd_mpva = sd(total_mvpa_minutes, na.rm = TRUE), 
+                    sd_mvpa = sd(total_mvpa_minutes, na.rm = TRUE), 
                     mean_sed = mean(total_sed_minutes, na.rm = TRUE), 
                     sd_sed = sd(total_sed_minutes, na.rm = TRUE), 
                     mean_light = mean(total_light_pa_minutes, na.rm = TRUE), 
@@ -896,20 +933,88 @@ ethica_pa_table <- ethica_data %>%
                   )
 ethica_pa_table
 
-victoria_activity_ethica <-  ethica_pa_table %>% 
-          filter(city_id == "victoria") %>% 
-          ggplot() + 
-                    geom_smooth(aes(x = date, y = mean_light), colour = "black", linetype = "dashed") +
-                    geom_smooth(aes(x = date, y = mean_mvpa), colour = "grey") + 
-                    geom_smooth(aes(x = date, y = mean_sed), colour = "black") +     
-                scale_x_date(date_labels = "%m-%Y") +
-                ylim(0, 50) +
-                theme_classic()
-plot(victoria_activity_ethica)
-
-ggsave("victoria_activity.jpg", dpi = 150, height = 4, width = 6)
+ethica_sum_table <- ethica_pa_table %>%
+                group_by(city_id) %>%
+                  summarize(
+                    time = mean(time, na.rm = TRUE), 
+                    wearing = mean(wearing, na.rm = TRUE), 
+                    mean_mpva = mean(mean_mvpa, na.rm = TRUE), 
+                    mean_sed = mean(sd_mvpa, na.rm = TRUE), 
+                    mean_light = mean(mean_light, na.rm = TRUE), 
+                    na_count = sum(is.na(time)), 
+                    count = n()
+                  )
+ethica_sum_table
 ```
 
+# Ethica Data Phone types
+
+```{r}
+ethica_phone <- read_csv("/Users/dfuller/Documents/INTERACT/data/ethica_phone_details-2021-02-11.csv")
+
+table(ethica_phone$manufacturer) ## 23 difference manufacturers
+
+ethica_phone <- ethica_phone %>%
+                  mutate(manufacturer_clean = case_when(
+                    manufacturer == "Acer" ~ "Acer",
+                    manufacturer == "blackberry" ~ "Blackberry",     
+                    manufacturer == "BlackBerry" ~ "Blackberry",                    
+                    manufacturer == "TCL" ~ "TCL",  
+                    manufacturer == "TCL ALCATEL ONETOUCH" ~ "TCL",  
+                    manufacturer == "Essential Products" ~ "Essential Products",     
+                    manufacturer == "HMD Global" ~ "HMD Global",   
+                    manufacturer == "LeMobilel" ~ "LeMobilel",  
+                    manufacturer == "AlcatelOneTouch" ~ "AlcatelOneTouch",    
+                    manufacturer == "Fairphone" ~ "Fairphone", 
+                    manufacturer == "HTC" ~ "HTC", 
+                    manufacturer == "LGE" ~ "LGE", 
+                    manufacturer == "Alco" ~ "Alco", 
+                    manufacturer == "Huawei" ~ "Huawei",
+                    manufacturer == "Xiaomi" ~ "Xiaomi", 
+                    manufacturer == "Apple Inc." ~ "Apple", 
+                    manufacturer == "HUAWEI" ~ "Huawei", 
+                    manufacturer == "motorola" ~ "Motorola", 
+                    manufacturer == "samsung" ~ "Samsung", 
+                    manufacturer == "ZTE" ~ "ZTE", 
+                    manufacturer == "asus" ~ "Asus", 
+                    manufacturer == "Google" ~ "Google", 
+                    manufacturer == "Infinix" ~ "Infinix", 
+                    manufacturer == "OnePlus" ~ "OnePlus", 
+                    manufacturer == "Sony" ~ "Sony", 
+                    TRUE ~ "NA"
+                  ))
+
+table(ethica_phone$manufacturer_clean)
+length(table(ethica_phone$manufacturer_clean)) 
+
+length(table(ethica_phone$model))
+
+ethica_phone$cur_os_version_num <- as.numeric(ethica_phone$cur_os_version)
+ethica_phone$last_os_version_num <- as.numeric(ethica_phone$last_os_version)
+
+ethica_phone$os_out_of_date <- ethica_phone$last_os_version_num - ethica_phone$cur_os_version_num
+```
+
+```{r}
+apple <- ethica_phone %>% filter(manufacturer_clean == "Apple")
+
+table(apple$cur_os_version_num) # 12 unique os with 208 devices 
+
+table(apple$os_out_of_date) # 79 out of date
+
+length(table(apple$os_updated_at)) # 79 out of date
+
+major_android <- ethica_phone %>% filter(manufacturer_clean == "Goggle" |  manufacturer_clean == "Samsung" | manufacturer_clean == "LGE" | manufacturer_clean == "Huawei")
+
+table(major_android$cur_os_version_num)
+
+
+table(major_android$cur_os_version_num) # 6 unique os with 124 devices 
+
+table(major_android$os_out_of_date) # 79 out of date
+```
+
+# VERTIAS Data
 
 ```{r}
 veritas_hull <- read_csv("/Users/dfuller/Documents/INTERACT/veritas_gps/as_cvxhull.csv")
@@ -940,6 +1045,7 @@ plot_v_hull <- ggplot(veritas_hul_city) +
                       geom_boxplot(aes(pct_veritas)) + 
                       coord_flip() +
                       facet_wrap(~ city_id) + 
+                      xlab("Percentage") +
                       theme_classic()
 plot(plot_v_hull)
 
@@ -964,12 +1070,16 @@ veritas_wearing <- read_csv("/Users/dfuller/Documents/INTERACT/veritas_gps/gps_v
 
 Short Mood Scale
 
-# Interventions
+# Interventions SenseDoc Data
 
 ### Victoria
 
 ```{r}
+vic_cma <- get_census(dataset='CA16', regions=list(CMA="59935"),
+                          level='CMA', use_cache = TRUE, geo_format = "sf")
+
 vic_sd <- sd_data %>% filter(city_id == "victoria" & in_city == 1) 
+sd_vic_days <- as.data.frame(unique(vic_sd$date))
 
 vic_int <- st_read("/Users/dfuller/Documents/INTERACT/data/intervention/victoria/IBIMS_2017.shp")
 st_crs(vic_int)
@@ -981,13 +1091,14 @@ vic_int_t
 vic_int_t$AAA <- vic_int_t$AAA %>% replace_na(0)
 
 vic_int_plot <- ggplot() + 
-                  geom_hex(aes(x = lon, y = lat), binwidth = c(0.005, 0.005), data = vic_sd, alpha = 1) +
+                  geom_sf(data = vic_cma) +
+                  geom_hex(aes(x = lon, y = lat), binwidth = c(0.005, 0.005), data = vic_sd, alpha = 0.8) +
                   scale_fill_gradient2(name="Count of GPS points", low="lightblue", high = "darkblue") +
                   geom_sf(data = vic_int_t, aes(colour = AAA)) +
                   coord_sf(
                       xlim = sf::st_bbox(vic_int_t)[c(1,3)],
                       ylim = sf::st_bbox(vic_int_t)[c(2,4)]) + 
-                  scale_color_manual(name="Cycling Infrascture", labels=c("Existing", "AAA"), values=c("grey80", "black")) +
+                  scale_color_manual(name="Cycling Infrastructure", labels=c("Existing", "AAA"), values=c("grey80", "black")) +
                   annotation_scale() + 
                   theme_map()
 
@@ -999,7 +1110,11 @@ ggsave("vic_int_plot.jpg", dpi = 150, height = 4, width = 6)
 ### Vancouver
 
 ```{r}
+van_cma <- get_census(dataset='CA16', regions=list(CMA="59933"),
+                          level='CMA', use_cache = TRUE, geo_format = "sf")
+
 van_sd <- sd_data %>% filter(city_id == "vancouver" & in_city == 1) 
+sd_van_days <- as.data.frame(unique(van_sd$date))
 
 van_int <- st_read("/Users/dfuller/Documents/INTERACT/data/intervention/vancouver/greenways.shp")
 st_crs(van_int)
@@ -1012,7 +1127,8 @@ van_int$arbutus <- as.factor(van_int$arbutus)
 ggplot() + geom_sf(data = van_int, aes(colour = arbutus))
 
 van_int_plot <- ggplot() + 
-                  geom_hex(aes(x = lon, y = lat), binwidth = c(0.005, 0.005), data = van_sd, alpha = 1) +
+                  geom_sf(data = van_cma) +
+                  geom_hex(aes(x = lon, y = lat), binwidth = c(0.005, 0.005), data = van_sd, alpha = 0.8) +
                   scale_fill_gradient2(name="Count of GPS points", low="lightblue", high = "darkblue") +
                   geom_sf(data = van_int, aes(colour = arbutus)) +
                   coord_sf(
@@ -1029,7 +1145,11 @@ ggsave("van_int_plot.jpg", dpi = 150, height = 4, width = 6)
 ### Saskatoon
 
 ```{r}
+sk_cma <- get_census(dataset='CA16', regions=list(CMA="47725"),
+                          level='CMA', use_cache = TRUE, geo_format = "sf")
+
 sk_sd <- sd_data %>% filter(city_id == "saskatoon" & in_city == 1) 
+sd_sk_days <- as.data.frame(unique(sk_sd$date))
 
 sk_int <- st_read("/Users/dfuller/Documents/INTERACT/data/intervention/saskatoon/BRT_lines.shp")
 st_crs(sk_int)
@@ -1041,7 +1161,8 @@ sk_int_t
 ggplot() + geom_sf(data = sk_int_t, aes(colour = line_name))
 
 sk_int_plot <- ggplot() + 
-                  geom_hex(aes(x = lon, y = lat), binwidth = c(0.005, 0.005), data = sk_sd, alpha = 1) +
+                  geom_sf(data = sk_cma) +
+                  geom_hex(aes(x = lon, y = lat), binwidth = c(0.005, 0.005), data = sk_sd, alpha = 0.8) +
                   scale_fill_gradient2(name="Count of GPS points", low="lightblue", high = "darkblue") +
                   geom_sf(data = sk_int_t, aes(colour = line_name)) +
                   coord_sf(
@@ -1052,13 +1173,17 @@ sk_int_plot <- ggplot() +
                   theme_map()
 plot(sk_int_plot)
 
-ggsave("sk_int_plot.jpg", dpi = 150, height = 4, width = 6)
+ggsave("sk_int_plot.jpg", dpi = 200, height = 4, width = 6)
 ```
 
 ### Montreal
 
 ```{r}
+mtl_cma <- get_census(dataset='CA16', regions=list(CMA="47725"),
+                          level='CMA', use_cache = TRUE, geo_format = "sf")
+
 mtl_sd <- sd_data %>% filter(city_id == "montreal" & in_city == 1) 
+sd_mtl_days <- as.data.frame(unique(mtl_sd$date))
 
 mtl_cyc <- st_read("/Users/dfuller/Documents/INTERACT/data/intervention/montreal/pistes-cyclables.shp")
 mtl_pet <- st_read("/Users/dfuller/Documents/INTERACT/data/intervention/montreal/rues-pietonnes.shp")
@@ -1070,7 +1195,8 @@ mtl_cyc <- st_transform(mtl_cyc, "+proj=longlat +ellps=WGS84 +datum=WGS84")
 ggplot() + geom_sf(data = mtl_cyc)
 
 mtl_int_plot <- ggplot() + 
-                  geom_hex(aes(x = lon, y = lat), binwidth = c(0.009, 0.009), data = mtl_sd, alpha = 1) +
+                  geom_sf(data = mtl_cma) +
+                  geom_hex(aes(x = lon, y = lat), binwidth = c(0.009, 0.009), data = mtl_sd, alpha = 0.8) +
                   scale_fill_gradient2(name="Count of GPS points", low="lightblue", high = "darkblue") +
                   geom_sf(data = mtl_cyc, aes(colour = Ville_MTL), alpha = 0.5) +
                   geom_point(aes(x = LONGITUDE, y = LATITUDE), data = mtl_pet, alpha = 0.7, colour = "darkgreen", size = 1) +
@@ -1083,6 +1209,94 @@ plot(mtl_int_plot)
 
 ggsave("mtl_int_plot.jpg", dpi = 150, height = 4, width = 6)
 ```
+
+# Interventions Ethica Data
+
+### Victoria
+
+```{r}
+vic_ethica <- ethica_data %>% filter(city_id == "victoria" & in_city == 1) 
+
+vic_int_plot_eth <- ggplot() + 
+                  geom_sf(data = vic_cma) +
+                  geom_hex(aes(x = lon, y = lat), binwidth = c(0.005, 0.005), data = vic_ethica, alpha = 0.8) +
+                  scale_fill_gradient2(name="Count of GPS points", low="lightblue", high = "darkblue") +
+                  geom_sf(data = vic_int_t, aes(colour = AAA)) +
+                  coord_sf(
+                      xlim = sf::st_bbox(vic_int_t)[c(1,3)],
+                      ylim = sf::st_bbox(vic_int_t)[c(2,4)]) + 
+                  scale_color_manual(name="Cycling Infrastructure", labels=c("Existing", "AAA"), values=c("grey80", "black")) +
+                  annotation_scale() + 
+                  theme_map()
+
+plot(vic_int_plot_eth)
+
+ggsave("vic_int_plot_eth.jpg", dpi = 150, height = 4, width = 6)
+```
+
+### Vancouver
+
+```{r}
+van_ethica <- ethica_data %>% filter(city_id == "vancouver" & in_city == 1) 
+
+van_int_plot_eth <- ggplot() + 
+                  geom_sf(data = van_cma) +
+                  geom_hex(aes(x = lon, y = lat), binwidth = c(0.005, 0.005), data = van_ethica, alpha = 0.8) +
+                  scale_fill_gradient2(name="Count of GPS points", low="lightblue", high = "darkblue") +
+                  geom_sf(data = van_int, aes(colour = arbutus)) +
+                  coord_sf(
+                      xlim = sf::st_bbox(van_int)[c(1,3)],
+                      ylim = sf::st_bbox(van_int)[c(2,4)]) + 
+                  scale_color_manual(name="Greenways", labels=c("Existing", "Arbutus"), values=c("grey80", "black")) +
+                  annotation_scale() + 
+                  theme_map()
+plot(van_int_plot_eth)
+
+ggsave("van_int_plot_eth.jpg", dpi = 150, height = 4, width = 6)
+```
+
+### Saskatoon
+
+```{r}
+sk_eth <- ethica_data %>% filter(city_id == "saskatoon" & in_city == 1) 
+
+sk_int_plot_eth <- ggplot() + 
+                  geom_sf(data = sk_cma) +
+                  geom_hex(aes(x = lon, y = lat), binwidth = c(0.005, 0.005), data = sk_eth, alpha = 0.8) +
+                  scale_fill_gradient2(name="Count of GPS points", low="lightblue", high = "darkblue") +
+                  geom_sf(data = sk_int_t, aes(colour = line_name)) +
+                  coord_sf(
+                      xlim = sf::st_bbox(sk_int_t)[c(1,3)],
+                      ylim = sf::st_bbox(sk_int_t)[c(2,4)]) + 
+                  scale_color_manual(name="BRT Routes", labels=c("Route 1", "Route 2", "Route 3"), values=c("grey20", "grey50", "grey80")) +
+                  annotation_scale() + 
+                  theme_map()
+plot(sk_int_plot_eth)
+
+ggsave("sk_int_plot_eth.jpg", dpi = 200, height = 4, width = 6)
+```
+
+### Montreal
+
+```{r}
+ethica_mtl <- ethica_data %>% filter(city_id == "montreal" & in_city == 1) 
+
+mtl_int_plot_eth <- ggplot() + 
+                  geom_sf(data = mtl_cma) +
+                  geom_hex(aes(x = lon, y = lat), binwidth = c(0.009, 0.009), data = ethica_mtl, alpha = 0.8) +
+                  scale_fill_gradient2(name="Count of GPS points", low="lightblue", high = "darkblue") +
+                  geom_sf(data = mtl_cyc, aes(colour = Ville_MTL), alpha = 0.5) +
+                  geom_point(aes(x = LONGITUDE, y = LATITUDE), data = mtl_pet, alpha = 0.7, colour = "darkgreen", size = 1) +
+                  coord_sf(
+                      xlim = sf::st_bbox(mtl_cyc)[c(1,3)],
+                      ylim = sf::st_bbox(mtl_cyc)[c(2,4)]) + 
+                  scale_color_manual(name="Existing Cycling Routes", labels=c("Montreal", "Not Montreal"), values=c("grey20", "grey50")) +                  annotation_scale() + 
+                  theme_map()
+plot(mtl_int_plot_eth)
+
+ggsave("mtl_int_plot_eth.jpg", dpi = 150, height = 4, width = 6)
+```
+
 
 # GPS Maps
 
@@ -1233,6 +1447,161 @@ plot(mtl_points_zoom)
 ggsave("mtl_points_zoom.jpg", dpi = 150, height = 4, width = 6)
 ``` 
 
+## Sensedoc and Ethica Comparisons per day
+
+### Victoria
+```{r}
+### Victoria
+vic_eth <- ethica_data %>% filter(city_id == "victoria" & in_city == 1) 
+vic_eth_sd <- inner_join(vic_sd, vic_eth, by = c("interact_id", "utcdate", "city_id"))
+table(vic_eth_sd$interact_id)  ### 40 participants
+
+vic_eth_101493098 <- vic_eth_sd %>% filter(interact_id == "101493098" & date.x != "2017-07-27")
+
+### Victoria 
+vic_da <- get_census(dataset='CA16', regions=list(CMA="59935"),
+                          level='DA', use_cache = TRUE, geo_format = "sf")
+
+
+ethica_vic.jpg <- ggplot() + 
+                  geom_sf(data = vic_da, alpha = 0.5, colour = "grey50") +
+                  geom_point(aes(x = lon.x, y = lat.x), data = vic_eth_sd, alpha = 0.5, colour = "darkgreen") +
+                  geom_point(aes(x = lon.y, y = lat.y), data = vic_eth_sd, alpha = 0.5, colour = "purple") +
+                  coord_sf(
+                      xlim = sf::st_bbox(vic_int_t)[c(1,3)],
+                      ylim = sf::st_bbox(vic_int_t)[c(2,4)]) +
+                  annotation_scale() + 
+                  theme_map()
+plot(ethica_vic.jpg)
+
+ggsave("ethica_vic.jpg", dpi = 150, height = 4, width = 6)
+
+### Victoria 101493098
+vic_101493098_sd <- ggplot() + 
+                  #geom_sf(data = vic_da, alpha = 0.5, colour = "grey50") +
+                  geom_hex(aes(x = lon.x, y = lat.x), data = vic_eth_101493098, binwidth = c(0.009, 0.009)) +
+                  coord_sf(
+                      xlim = sf::st_bbox(vic_int_t)[c(1,3)],
+                      ylim = sf::st_bbox(vic_int_t)[c(2,4)]) +
+                  #annotation_scale() + 
+                  scale_fill_gradient(name="Count of GPS points") +
+                  facet_wrap(~ date.x) +
+                  labs(x = "Longitude", y = "Latitude") +
+                  theme_minimal() + 
+                  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+                  scale_y_continuous(breaks=seq(48.44,48.54)) +
+                  scale_x_continuous(breaks=c(123.44, -123.30))
+
+plot(vic_101493098_sd)
+
+ggsave("vic_101493098_sd.jpg", dpi = 150, height = 4, width = 6)
+
+vic_101493098_eth <- ggplot() + 
+                  #geom_sf(data = vic_da, alpha = 0.5, colour = "grey50") +
+                  geom_hex(aes(x = lon.y, y = lat.y), data = vic_eth_101493098, binwidth = c(0.009, 0.009)) +
+                  coord_sf(
+                      xlim = sf::st_bbox(vic_int_t)[c(1,3)],
+                      ylim = sf::st_bbox(vic_int_t)[c(2,4)]) +
+                  #annotation_scale() + 
+                  scale_fill_gradient(name="Count of GPS points") +
+                  facet_wrap(~ date.x) +
+                  labs(x = "Longitude", y = "Latitude") +
+                  theme_minimal() + 
+                  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+                  scale_y_continuous(breaks=seq(48.44,48.54)) +
+                  scale_x_continuous(breaks=c(123.44, -123.30))
+               
+plot(vic_101493098_eth)
+
+ggsave("vic_101493098_ethica.jpg", dpi = 150, height = 4, width = 6)
+```
+
+## Sensedoc and Ethica Comparisons per day
+
+### Vancouver
+```{r}
+### Vancouver
+van_eth <- ethica_data %>% filter(city_id == "vancouver" & in_city == 1) 
+van_eth_sd <- inner_join(van_sd, van_eth, by = c("interact_id", "utcdate", "city_id"))
+table(van_eth_sd$interact_id)  ### 38 participants
+
+van_eth_201759149 <- van_eth_sd %>% filter(interact_id == "201759149")
+
+### Vancouver
+van_da <- get_census(dataset='CA16', regions=list(CMA="59933"),
+                          level='DA', use_cache = TRUE, geo_format = "sf")
+
+ethica_van <- ggplot() + 
+                  geom_sf(data = van_da, alpha = 0.5, colour = "grey50") +
+                  geom_point(aes(x = lon.x, y = lat.x), data = van_eth_201759149, alpha = 0.5, colour = "darkgreen") +
+                  geom_point(aes(x = lon.y, y = lat.y), data = van_eth_201759149, alpha = 0.5, colour = "purple") +
+                  coord_sf(
+                      xlim = sf::st_bbox(van_int)[c(1,3)],
+                      ylim = sf::st_bbox(van_int)[c(2,4)]) +
+                  annotation_scale() + 
+                  theme_map()
+plot(ethica_van)
+
+ggsave("ethica_van.jpg", dpi = 150, height = 4, width = 6)
+```
+
+## Sensedoc and Ethica Comparisons per day
+
+### Saskatoon
+
+```{r}
+### Saskatoon
+sk_eth <- ethica_data %>% filter(city_id == "saskatoon" & in_city == 1) 
+sk_eth_sd <- inner_join(sk_sd, sk_eth, by = c("interact_id", "utcdate", "city_id"))
+table(sk_eth_sd$interact_id)  ### 38 participants
+
+sk_eth_302837017 <- sk_eth_sd %>% filter(interact_id == "302837017")
+
+### Saskatoon DAs
+sk_da <- get_census(dataset='CA16', regions=list(CMA="47725"),
+                          level='DA', use_cache = TRUE, geo_format = "sf")
+
+ethica_sk <- ggplot() + 
+                  geom_sf(data = sk_da, alpha = 0.5, colour = "grey50") +
+                  geom_point(aes(x = lon.x, y = lat.x), data = sk_eth_302837017, alpha = 0.5, colour = "darkgreen") +
+                  geom_point(aes(x = lon.y, y = lat.y), data = sk_eth_302837017, alpha = 0.5, colour = "purple") +
+                  coord_sf(
+                      xlim = sf::st_bbox(sk_int_t)[c(1,3)],
+                      ylim = sf::st_bbox(sk_int_t)[c(2,4)]) +
+                  annotation_scale() + 
+                  theme_map()
+plot(ethica_sk)
+
+ggsave("ethica_sk.jpg", dpi = 150, height = 4, width = 6)
+```
+
+## Sensedoc and Ethica Comparisons per day
+
+### Montreal
+
+```{r}
+### Montreal
+mtl_eth <- ethica_data %>% filter(city_id == "montreal" & in_city == 1) 
+mtl_eth_sd <- inner_join(mtl_sd, mtl_eth, by = c("interact_id", "utcdate", "city_id"))
+table(mtl_eth_sd$interact_id)  ### 9 participants
+
+mtl_eth_401977519 <- mtl_eth_sd %>% filter(interact_id == "401977519")
+
+### Montreal
+mtl_da <- get_census(dataset='CA16', regions=list(CMA="47725"),
+                          level='DA', use_cache = TRUE, geo_format = "sf")
+
+ethica_mtl <- ggplot() + 
+                  geom_sf(data = mtl_da, alpha = 0.5) +
+                  geom_point(aes(x = lon.x, y = lat.x), data = mtl_eth_401977519, alpha = 0.5, colour = "darkgreen") +
+                  geom_point(aes(x = lon.y, y = lat.y), data = mtl_eth_401977519, alpha = 0.5, colour = "purple") 
+                  #coord_sf(
+                  #    xlim = sf::st_bbox(mtl_cyc)[c(1,3)],
+                  #    ylim = sf::st_bbox(mtl_cyc)[c(2,4)]) 
+plot(ethica_mtl)
+
+ggsave("ethica_mtl.jpg", dpi = 150, height = 4, width = 6)
+```
 
 # Participant Data Flow
 

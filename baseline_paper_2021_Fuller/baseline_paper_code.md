@@ -21,7 +21,7 @@ library(tidyverse)
 ```
 
 ```
-## ── Attaching packages ──────────────────────────────────────────────────────────────────────────────────────────────── tidyverse 1.3.0 ──
+## ── Attaching packages ────────────────────────────────────────────────────────────────────────────────────────────── tidyverse 1.3.0 ──
 ```
 
 ```
@@ -32,9 +32,24 @@ library(tidyverse)
 ```
 
 ```
-## ── Conflicts ─────────────────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+## ── Conflicts ───────────────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
 ## x dplyr::filter() masks stats::filter()
 ## x dplyr::lag()    masks stats::lag()
+```
+
+```r
+library(lubridate)
+```
+
+```
+## 
+## Attaching package: 'lubridate'
+```
+
+```
+## The following objects are masked from 'package:base':
+## 
+##     date, intersect, setdiff, union
 ```
 
 ```r
@@ -108,8 +123,15 @@ library(cowplot)
 ##     theme_nothing
 ```
 
+```
+## The following object is masked from 'package:lubridate':
+## 
+##     stamp
+```
+
 ```r
 library(ggspatial)
+library(knitr)
 ```
 
 
@@ -189,17 +211,52 @@ age_table <- data %>%
 ```
 
 ```r
+data$birth_date <- ymd(data$birth_date)
+data$birth_year <- year(data$birth_date)
+
+data$age_sk <- 2021 - data$birth_year
+
+table(data$age_sk)
+```
+
+```
+## 
+##    1    2   21   22   23   24   25   26   27   28   29   30   31   32   33   34 
+##    1    3   17   23   30   28   34   19   26   33   39   43   37   48   44   53 
+##   35   36   37   38   39   40   41   42   43   44   45   46   47   48   49   50 
+##   47   43   53   58   42   52   51   43   34   37   28   36   32   45   30   25 
+##   51   52   53   54   55   56   57   58   59   60   61   62   63   64   65   66 
+##   34   30   31   35   33   35   36   39   39   28   40   45   34   37   35   33 
+##   67   68   69   70   71   72   73   74   75   76   77   78   79   80   81   82 
+##   34   36   35   18   21   19   25   28   20   18    9   14   11   13   12    5 
+##   83   84   85   86   87   88   89   92 1941 
+##    5    3    5    1    1    1    1    2    1
+```
+
+```r
+data$age_sk <- as.numeric(data$age_sk)
+
 data <- data %>%
-          mutate(age_cat = case_when(
+          mutate(age_recode = case_when(
             age <= 19 ~ "15_19",
             age > 19 & age <= 29 ~ "20_29",
             age > 29 & age <= 39 ~ "30_39",     
             age > 39 & age <= 49 ~ "40_49",      
             age > 59 & age <= 64 ~ "50_64",      
-            age > 64 ~ "65+",  
+            age > 64 ~ "65+"  
            ))
 
-table(data$age_cat, data$age)
+data <- data %>%
+          mutate(age_sk_recode = case_when(
+            age_sk <= 19 ~ "15_19",
+            age_sk > 19 & age_sk <= 29 ~ "20_29",
+            age_sk > 29 & age_sk <= 39 ~ "30_39",     
+            age_sk > 39 & age_sk <= 49 ~ "40_49",      
+            age_sk > 59 & age_sk <= 64 ~ "50_64",      
+            age_sk > 64 ~ "65+"  
+           ))
+
+table(data$age_recode, data$age)
 ```
 
 ```
@@ -230,18 +287,18 @@ table(data$age_cat, data$age)
 ```
 
 ```r
-table(data$age_cat, data$city_id)
+table(data$age_sk_recode, data$city_id)
 ```
 
 ```
 ##        
 ##         Montréal Saskatoon Vancouver Victoria
-##   15_19       12         0         2        0
-##   20_29      183         0        26       46
-##   30_39      298         0        28       79
-##   40_49      195         0        47       60
-##   50_64      108         0        42       26
-##   65+        150         0       106       19
+##   15_19        0         4         0        0
+##   20_29      113       111        10       15
+##   30_39      283        73        38       74
+##   40_49      243        45        28       72
+##   50_64      105         7        40       32
+##   65+        226         7       133       40
 ```
 
 ## Age Census
@@ -1257,7 +1314,7 @@ ethnicity_census$ethnicity_cat <- recode(ethnicity_census$ethnicity,
               "v_CA16_3972: Latin American" = "Latin American", 
               "v_CA16_3975: Arab" = "Middle Eastern", 
               "v_CA16_3978: Southeast Asian" = "Asian", 
-              "v_CA16_3981: West Asian" = "Asian", 
+              "v_CA16_3981: West Asian" = "Middle Eastern", 
               "v_CA16_3984: Korean" = "Asian", 
               "v_CA16_3987: Japanese" = "Asian", 
               "v_CA16_3996: Not a visible minority" = "White", 
@@ -1302,11 +1359,11 @@ table(ethnicity_census$ethnicity_cat, ethnicity_census$ethnicity)
 ##                 
 ##                  v_CA16_3978: Southeast Asian v_CA16_3981: West Asian
 ##                                             0                       0
-##   Asian                                     4                       4
+##   Asian                                     4                       0
 ##   Black                                     0                       0
 ##   Indigenous                                0                       0
 ##   Latin American                            0                       0
-##   Middle Eastern                            0                       0
+##   Middle Eastern                            0                       4
 ##   White                                     0                       0
 ##                 
 ##                  v_CA16_3984: Korean v_CA16_3987: Japanese
@@ -1385,14 +1442,14 @@ ethnicity_census_table
 ##    GeoUID ethnicity_cat    eth_pct city         
 ##    <chr>  <chr>              <dbl> <fct>        
 ##  1 24462  ""                  2.93 Montréal (B) 
-##  2 24462  "Asian"             7.41 Montréal (B) 
+##  2 24462  "Asian"             6.71 Montréal (B) 
 ##  3 24462  "Black"             6.61 Montréal (B) 
 ##  4 24462  "Indigenous"        2.88 Montréal (B) 
 ##  5 24462  "Latin American"    2.69 Montréal (B) 
-##  6 24462  "Middle Eastern"    4.66 Montréal (B) 
+##  6 24462  "Middle Eastern"    5.37 Montréal (B) 
 ##  7 24462  "White"            75.8  Montréal (B) 
 ##  8 47725  ""                 11.7  Saskatoon (B)
-##  9 47725  "Asian"            12.6  Saskatoon (B)
+##  9 47725  "Asian"            12.2  Saskatoon (B)
 ## 10 47725  "Black"             1.89 Saskatoon (B)
 ## # … with 18 more rows
 ```
@@ -1863,7 +1920,7 @@ soc_cohesion_table
 ```r
 data_temp <- NULL
 
-data_temp <- dir(path = "/Users/dfuller/Documents/INTERACT/activity_space_gps/raw_data", full.names = TRUE, pattern = "*2020-01-10.csv", recursive = TRUE) %>%
+data_temp <- dir(path = "/Users/dfuller/Documents/INTERACT/data/sensors/", full.names = TRUE, pattern = "*_sd.csv", recursive = TRUE) %>%
    purrr::map(function(i){
      dfhx <- read.csv(i, header = TRUE)
      temp <- bind_rows(data_temp, dfhx)
@@ -1885,7 +1942,7 @@ table(sd_data$city)
 ```r
 data_temp <- NULL
 
-data_temp <- dir(path = "/Users/dfuller/Documents/INTERACT/activity_space_gps/raw_data", full.names = TRUE, pattern = "*_ethica.csv", recursive = TRUE) %>%
+data_temp <- dir(path = "/Users/dfuller/Documents/INTERACT/data/sensors/", full.names = TRUE, pattern = "*_ethica.csv", recursive = TRUE) %>%
    purrr::map(function(i){
      dfhx <- read.csv(i, header = TRUE)
      temp <- bind_rows(data_temp, dfhx)
@@ -1899,7 +1956,7 @@ table(ethica_data$city)
 ```
 ## 
 ##  montreal saskatoon vancouver  victoria 
-##    157276    428262    248729    275592
+##    738181    428262    248729    275592
 ```
 
 ## Some basic cleaning
@@ -1907,8 +1964,24 @@ table(ethica_data$city)
 
 ```r
 # Filter out if they are not in the city, Reason: No CTUID for out of the city
-sd_data <- sd_data %>% filter(in_city == 1)
-ethica_data <- ethica_data %>% filter(in_city == 1)
+sd_data <- sd_data %>% filter(in_city == 1 & wearing == 1)
+ethica_data <- ethica_data %>% filter(in_city == 1& wearing == 1)
+
+sd_data <- sd_data %>%
+	mutate(activity_levels = case_when(
+		x_count < 100 ~ "sedentary",
+		x_count >= 100 & x_count <= 1951 ~ "light",
+		x_count >= 1951 & x_count <= 5724 ~ "moderate",
+	  x_count >= 5725 ~ "vigorous"
+	))
+
+ethica_data <- ethica_data %>%
+	mutate(activity_levels = case_when(
+		x_count < 100 ~ "sedentary",
+		x_count >= 100 & x_count <= 1951 ~ "light",
+		x_count >= 1951 & x_count <= 5724 ~ "moderate",
+	  x_count >= 5725 ~ "vigorous"
+	))
 ```
 
 ## Create a date column and add a minutes in census tract by id, date, and census tract column 
@@ -1922,7 +1995,7 @@ table(sd_data$city_id)
 ```
 ## 
 ##  montreal saskatoon vancouver  victoria 
-##    553887    425178    551565    718815
+##    547235    353822    547167    708729
 ```
 
 ```r
@@ -1943,7 +2016,7 @@ table(ethica_data$city_id)
 ```
 ## 
 ##  montreal saskatoon vancouver  victoria 
-##    102027    232566    174782    102869
+##    635184    227610    169877     97342
 ```
 
 ```r
@@ -1967,7 +2040,7 @@ table(sd_data$activity_levels)
 ```
 ## 
 ##     light  moderate sedentary  vigorous 
-##    898156    310517   1012647     28125
+##    726847    139451   1278798     11857
 ```
 
 ```r
@@ -1976,8 +2049,8 @@ table(sd_data$wearing)
 
 ```
 ## 
-##       0       1 
-##   92492 2156953
+##       1 
+## 2156953
 ```
 
 ```r
@@ -2041,21 +2114,21 @@ sd_pa_table
 ```
 
 ```
-## # A tibble: 5,579 x 13
-## # Groups:   interact_id, date [5,579]
+## # A tibble: 5,540 x 13
+## # Groups:   interact_id, date [5,540]
 ##    interact_id date       city_id  time wearing mean_mpva_sd sd_mpva_sd
 ##          <int> <date>     <chr>   <dbl>   <dbl>        <dbl>      <dbl>
-##  1   101001706 2017-10-23 victor…    69   0.652            6          0
-##  2   101001706 2017-10-24 victor…   549   1               31          0
-##  3   101001706 2017-10-25 victor…   729   0.999           60          0
-##  4   101001706 2017-10-26 victor…   553   0.886           31          0
-##  5   101001706 2017-10-27 victor…   703   0.996           48          0
-##  6   101001706 2017-10-28 victor…   556   0.996           36          0
-##  7   101001706 2017-10-29 victor…   557   0.991           65          0
-##  8   101001706 2017-10-30 victor…   584   0.998           53          0
-##  9   101001706 2017-10-31 victor…   610   0.998           71          0
-## 10   101001706 2017-11-01 victor…    30   0.933            5          0
-## # … with 5,569 more rows, and 6 more variables: mean_sed_sd <dbl>,
+##  1   101001706 2017-10-23 victor…    45       1            0          0
+##  2   101001706 2017-10-24 victor…   549       1            6          0
+##  3   101001706 2017-10-25 victor…   728       1           17          0
+##  4   101001706 2017-10-26 victor…   490       1            7          0
+##  5   101001706 2017-10-27 victor…   700       1           13          0
+##  6   101001706 2017-10-28 victor…   554       1           13          0
+##  7   101001706 2017-10-29 victor…   552       1           13          0
+##  8   101001706 2017-10-30 victor…   583       1           13          0
+##  9   101001706 2017-10-31 victor…   609       1           11          0
+## 10   101001706 2017-11-01 victor…    28       1            3          0
+## # … with 5,530 more rows, and 6 more variables: mean_sed_sd <dbl>,
 ## #   sd_sed_sd <dbl>, mean_light_sd <dbl>, sd_light_sd <dbl>, na_count <int>,
 ## #   count <int>
 ```
@@ -2086,13 +2159,13 @@ sd_sum_table
 ## # A tibble: 4 x 8
 ##   city_id    time wearing mean_mpva_sd mean_sed_sd mean_light_sd na_count count
 ##   <chr>     <dbl>   <dbl>        <dbl>       <dbl>         <dbl>    <int> <int>
-## 1 montreal   333.   0.978         52.6        149.          131.        0  1664
-## 2 saskatoon  540.   0.867         53.3        317.          169.        0   788
-## 3 vancouver  361.   0.981         62.7        151.          148.        0  1527
-## 4 victoria   449.   0.971         70.9        178.          201.        0  1600
+## 1 montreal   330.       1         24.1        199.          107.        0  1658
+## 2 saskatoon  459.       1         20.7        301.          137.        0   771
+## 3 vancouver  360.       1         32.5        207.          121.        0  1520
+## 4 victoria   445.       1         28.9        252.          164.        0  1591
 ```
 
-### Ethica Activity Figures but city
+### SD Activity Figures by city
 
 
 ```r
@@ -2116,7 +2189,7 @@ plot(saskatoon_activity)
 ```
 
 ```
-## Warning: Removed 23 rows containing non-finite values (stat_smooth).
+## Warning: Removed 6 rows containing non-finite values (stat_smooth).
 ```
 
 ```
@@ -2125,7 +2198,7 @@ plot(saskatoon_activity)
 ```
 
 ```
-## Warning: Removed 202 rows containing non-finite values (stat_smooth).
+## Warning: Removed 239 rows containing non-finite values (stat_smooth).
 ```
 
 ![](baseline_paper_code_files/figure-html/unnamed-chunk-20-1.png)<!-- -->
@@ -2139,7 +2212,7 @@ ggsave("saskatoon_activity.jpg", dpi = 150, height = 4, width = 6)
 ```
 
 ```
-## Warning: Removed 23 rows containing non-finite values (stat_smooth).
+## Warning: Removed 6 rows containing non-finite values (stat_smooth).
 ```
 
 ```
@@ -2148,7 +2221,7 @@ ggsave("saskatoon_activity.jpg", dpi = 150, height = 4, width = 6)
 ```
 
 ```
-## Warning: Removed 202 rows containing non-finite values (stat_smooth).
+## Warning: Removed 239 rows containing non-finite values (stat_smooth).
 ```
 
 
@@ -2171,7 +2244,7 @@ plot(montreal_activity)
 ```
 
 ```
-## Warning: Removed 22 rows containing non-finite values (stat_smooth).
+## Warning: Removed 8 rows containing non-finite values (stat_smooth).
 ```
 
 ```
@@ -2180,7 +2253,7 @@ plot(montreal_activity)
 ```
 
 ```
-## Warning: Removed 62 rows containing non-finite values (stat_smooth).
+## Warning: Removed 206 rows containing non-finite values (stat_smooth).
 ```
 
 ![](baseline_paper_code_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
@@ -2194,7 +2267,7 @@ ggsave("montreal_activity.jpg", dpi = 150, height = 4, width = 6)
 ```
 
 ```
-## Warning: Removed 22 rows containing non-finite values (stat_smooth).
+## Warning: Removed 8 rows containing non-finite values (stat_smooth).
 ```
 
 ```
@@ -2203,7 +2276,7 @@ ggsave("montreal_activity.jpg", dpi = 150, height = 4, width = 6)
 ```
 
 ```
-## Warning: Removed 62 rows containing non-finite values (stat_smooth).
+## Warning: Removed 206 rows containing non-finite values (stat_smooth).
 ```
 
 
@@ -2226,23 +2299,16 @@ plot(vancouver_activity)
 ```
 
 ```
-## Warning: Removed 46 rows containing non-finite values (stat_smooth).
+## Warning: Removed 12 rows containing non-finite values (stat_smooth).
 ```
 
 ```
 ## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
-```
-
-```
-## Warning: Removed 1 rows containing non-finite values (stat_smooth).
-```
-
-```
 ## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
 ```
 
 ```
-## Warning: Removed 36 rows containing non-finite values (stat_smooth).
+## Warning: Removed 190 rows containing non-finite values (stat_smooth).
 ```
 
 ![](baseline_paper_code_files/figure-html/unnamed-chunk-22-1.png)<!-- -->
@@ -2256,23 +2322,16 @@ ggsave("vancouver_activity.jpg", dpi = 150, height = 4, width = 6)
 ```
 
 ```
-## Warning: Removed 46 rows containing non-finite values (stat_smooth).
+## Warning: Removed 12 rows containing non-finite values (stat_smooth).
 ```
 
 ```
 ## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
-```
-
-```
-## Warning: Removed 1 rows containing non-finite values (stat_smooth).
-```
-
-```
 ## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
 ```
 
 ```
-## Warning: Removed 36 rows containing non-finite values (stat_smooth).
+## Warning: Removed 190 rows containing non-finite values (stat_smooth).
 ```
 
 
@@ -2295,7 +2354,7 @@ plot(victoria_activity)
 ```
 
 ```
-## Warning: Removed 130 rows containing non-finite values (stat_smooth).
+## Warning: Removed 48 rows containing non-finite values (stat_smooth).
 ```
 
 ```
@@ -2304,7 +2363,7 @@ plot(victoria_activity)
 ```
 
 ```
-## Warning: Removed 75 rows containing non-finite values (stat_smooth).
+## Warning: Removed 297 rows containing non-finite values (stat_smooth).
 ```
 
 ![](baseline_paper_code_files/figure-html/unnamed-chunk-23-1.png)<!-- -->
@@ -2318,7 +2377,7 @@ ggsave("victoria_activity.jpg", dpi = 150, height = 4, width = 6)
 ```
 
 ```
-## Warning: Removed 130 rows containing non-finite values (stat_smooth).
+## Warning: Removed 48 rows containing non-finite values (stat_smooth).
 ```
 
 ```
@@ -2327,7 +2386,7 @@ ggsave("victoria_activity.jpg", dpi = 150, height = 4, width = 6)
 ```
 
 ```
-## Warning: Removed 75 rows containing non-finite values (stat_smooth).
+## Warning: Removed 297 rows containing non-finite values (stat_smooth).
 ```
 
 ### MPVA Minutes Ethica
@@ -2340,7 +2399,7 @@ table(ethica_data$activity_levels)
 ```
 ## 
 ##     light  moderate sedentary  vigorous 
-##     56307     53968    271094    230875
+##    173191     88591    734283    133948
 ```
 
 ```r
@@ -2349,8 +2408,8 @@ table(ethica_data$wearing)
 
 ```
 ## 
-##      0      1 
-##  18022 594222
+##       1 
+## 1130013
 ```
 
 ```r
@@ -2395,7 +2454,7 @@ ethica_pa_table <- ethica_data %>%
                     time = mean(minutes_id_date_city, na.rm = TRUE),
                     wearing = mean(wearing, na.rm = TRUE),
                     mean_mvpa = mean(total_mvpa_minutes, na.rm = TRUE), 
-                    sd_mpva = sd(total_mvpa_minutes, na.rm = TRUE), 
+                    sd_mvpa = sd(total_mvpa_minutes, na.rm = TRUE), 
                     mean_sed = mean(total_sed_minutes, na.rm = TRUE), 
                     sd_sed = sd(total_sed_minutes, na.rm = TRUE), 
                     mean_light = mean(total_light_pa_minutes, na.rm = TRUE), 
@@ -2414,91 +2473,276 @@ ethica_pa_table
 ```
 
 ```
-## # A tibble: 4,369 x 13
-## # Groups:   interact_id, date [4,369]
-##    interact_id date       city_id  time wearing mean_mvpa sd_mpva mean_sed
+## # A tibble: 8,172 x 13
+## # Groups:   interact_id, date [8,172]
+##    interact_id date       city_id  time wearing mean_mvpa sd_mvpa mean_sed
 ##          <int> <date>     <chr>   <dbl>   <dbl>     <dbl>   <dbl>    <dbl>
-##  1   101005415 2017-10-09 victor…   253   0.937       112       0      128
-##  2   101005415 2017-10-10 victor…    10   1             0       0       10
-##  3   101011680 2017-07-22 victor…    62   0.984        35       0       16
-##  4   101011680 2017-07-23 victor…    41   1            11       0       25
-##  5   101011680 2017-07-24 victor…    46   1            13       0       18
-##  6   101011680 2017-07-25 victor…    34   0.971        10       0        9
-##  7   101011680 2017-07-26 victor…    44   1             0       0       43
-##  8   101011680 2017-07-27 victor…    38   1            21       0        5
-##  9   101011680 2017-07-28 victor…    10   1             5       0        0
-## 10   101011680 2017-07-29 victor…    78   1            32       0       42
-## # … with 4,359 more rows, and 5 more variables: sd_sed <dbl>, mean_light <dbl>,
+##  1   101005415 2017-10-09 victor…   237       1        94       0      120
+##  2   101005415 2017-10-10 victor…    10       1         0       0       10
+##  3   101011680 2017-07-22 victor…    61       1        31       0       19
+##  4   101011680 2017-07-23 victor…    41       1         7       0       26
+##  5   101011680 2017-07-24 victor…    46       1         9       0       24
+##  6   101011680 2017-07-25 victor…    33       1         7       0       10
+##  7   101011680 2017-07-26 victor…    44       1         0       0       44
+##  8   101011680 2017-07-27 victor…    38       1         7       0        6
+##  9   101011680 2017-07-28 victor…    10       1         2       0        0
+## 10   101011680 2017-07-29 victor…    78       1        24       0       45
+## # … with 8,162 more rows, and 5 more variables: sd_sed <dbl>, mean_light <dbl>,
 ## #   sd_light <dbl>, na_count <int>, count <int>
 ```
 
 ```r
-victoria_activity_ethica <-  ethica_pa_table %>% 
-          filter(city_id == "victoria") %>% 
-          ggplot() + 
-                    geom_smooth(aes(x = date, y = mean_light), colour = "black", linetype = "dashed") +
-                    geom_smooth(aes(x = date, y = mean_mvpa), colour = "grey") + 
-                    geom_smooth(aes(x = date, y = mean_sed), colour = "black") +     
-                scale_x_date(date_labels = "%m-%Y") +
-                ylim(0, 50) +
-                theme_classic()
-plot(victoria_activity_ethica)
+ethica_sum_table <- ethica_pa_table %>%
+                group_by(city_id) %>%
+                  summarize(
+                    time = mean(time, na.rm = TRUE), 
+                    wearing = mean(wearing, na.rm = TRUE), 
+                    mean_mpva = mean(mean_mvpa, na.rm = TRUE), 
+                    mean_sed = mean(sd_mvpa, na.rm = TRUE), 
+                    mean_light = mean(mean_light, na.rm = TRUE), 
+                    na_count = sum(is.na(time)), 
+                    count = n()
+                  )
 ```
 
 ```
-## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
+## `summarise()` ungrouping output (override with `.groups` argument)
 ```
-
-```
-## Warning: Removed 9 rows containing non-finite values (stat_smooth).
-```
-
-```
-## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
-```
-
-```
-## Warning: Removed 206 rows containing non-finite values (stat_smooth).
-```
-
-```
-## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
-```
-
-```
-## Warning: Removed 339 rows containing non-finite values (stat_smooth).
-```
-
-![](baseline_paper_code_files/figure-html/unnamed-chunk-24-1.png)<!-- -->
 
 ```r
-ggsave("victoria_activity.jpg", dpi = 150, height = 4, width = 6)
+ethica_sum_table
 ```
 
 ```
-## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
+## # A tibble: 4 x 8
+##   city_id    time wearing mean_mpva mean_sed mean_light na_count count
+##   <chr>     <dbl>   <dbl>     <dbl>    <dbl>      <dbl>    <int> <int>
+## 1 montreal  135.        1      5.17        0       23.4        0  4715
+## 2 saskatoon 219.        1    102.          0       29.6        0  1041
+## 3 vancouver 142.        1     55.0         0       13.8        0  1196
+## 4 victoria   79.8       1     21.4         0       12.8        0  1220
+```
+
+# Ethica Data Phone types
+
+
+```r
+ethica_phone <- read_csv("/Users/dfuller/Documents/INTERACT/data/ethica_phone_details-2021-02-11.csv")
 ```
 
 ```
-## Warning: Removed 9 rows containing non-finite values (stat_smooth).
+## Parsed with column specification:
+## cols(
+##   owner_id = col_double(),
+##   device_id = col_character(),
+##   manufacturer = col_character(),
+##   model = col_character(),
+##   bt_mac = col_character(),
+##   wifi_mac = col_character(),
+##   created_at = col_datetime(format = ""),
+##   app_updated_at = col_datetime(format = ""),
+##   cur_app_version = col_double(),
+##   last_app_version = col_double(),
+##   cur_os_version = col_character(),
+##   last_os_version = col_character(),
+##   os_updated_at = col_datetime(format = "")
+## )
+```
+
+```r
+table(ethica_phone$manufacturer) ## 23 difference manufacturers
 ```
 
 ```
-## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
+## 
+##                       Acer            AlcatelOneTouch 
+##                          5                          1 
+##                       Alco                 Apple Inc. 
+##                          1                        837 
+##                       asus                 blackberry 
+##                          9                          1 
+##                 BlackBerry         Chrome for Desktop 
+##                          3                          2 
+##          Chrome for Mobile          Chrome for Tablet 
+##                         14                          1 
+##         Essential Products                  Fairphone 
+##                          1                          1 
+##        Firefox for Desktop         Firefox for Mobile 
+##                          1                          1 
+##                     Google                 HMD Global 
+##                         76                          3 
+##                        HTC                     Huawei 
+##                          7                          2 
+##                     HUAWEI                    Infinix 
+##                         29                          1 
+##                   LeMobile                        LGE 
+##                          1                         78 
+## Microsoft Edge for Desktop                   motorola 
+##                          1                         45 
+##                    OnePlus         Safari for Desktop 
+##                          7                          1 
+##          Safari for Mobile          Safari for Tablet 
+##                         27                          1 
+##                    samsung                       Sony 
+##                        323                         10 
+##                        TCL       TCL ALCATEL ONETOUCH 
+##                          2                          2 
+##                     Xiaomi                        ZTE 
+##                         15                          1
+```
+
+```r
+ethica_phone <- ethica_phone %>%
+                  mutate(manufacturer_clean = case_when(
+                    manufacturer == "Acer" ~ "Acer",
+                    manufacturer == "blackberry" ~ "Blackberry",     
+                    manufacturer == "BlackBerry" ~ "Blackberry",                    
+                    manufacturer == "TCL" ~ "TCL",  
+                    manufacturer == "TCL ALCATEL ONETOUCH" ~ "TCL",  
+                    manufacturer == "Essential Products" ~ "Essential Products",     
+                    manufacturer == "HMD Global" ~ "HMD Global",   
+                    manufacturer == "LeMobilel" ~ "LeMobilel",  
+                    manufacturer == "AlcatelOneTouch" ~ "AlcatelOneTouch",    
+                    manufacturer == "Fairphone" ~ "Fairphone", 
+                    manufacturer == "HTC" ~ "HTC", 
+                    manufacturer == "LGE" ~ "LGE", 
+                    manufacturer == "Alco" ~ "Alco", 
+                    manufacturer == "Huawei" ~ "Huawei",
+                    manufacturer == "Xiaomi" ~ "Xiaomi", 
+                    manufacturer == "Apple Inc." ~ "Apple", 
+                    manufacturer == "HUAWEI" ~ "Huawei", 
+                    manufacturer == "motorola" ~ "Motorola", 
+                    manufacturer == "samsung" ~ "Samsung", 
+                    manufacturer == "ZTE" ~ "ZTE", 
+                    manufacturer == "asus" ~ "Asus", 
+                    manufacturer == "Google" ~ "Google", 
+                    manufacturer == "Infinix" ~ "Infinix", 
+                    manufacturer == "OnePlus" ~ "OnePlus", 
+                    manufacturer == "Sony" ~ "Sony", 
+                    TRUE ~ "NA"
+                  ))
+
+table(ethica_phone$manufacturer_clean)
 ```
 
 ```
-## Warning: Removed 206 rows containing non-finite values (stat_smooth).
+## 
+##               Acer    AlcatelOneTouch               Alco              Apple 
+##                  5                  1                  1                837 
+##               Asus         Blackberry Essential Products          Fairphone 
+##                  9                  4                  1                  1 
+##             Google         HMD Global                HTC             Huawei 
+##                 76                  3                  7                 31 
+##            Infinix                LGE           Motorola                 NA 
+##                  1                 78                 45                 53 
+##            OnePlus            Samsung               Sony                TCL 
+##                  7                323                 10                  4 
+##             Xiaomi                ZTE 
+##                 15                  1
+```
+
+```r
+length(table(ethica_phone$manufacturer_clean)) 
 ```
 
 ```
-## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
+## [1] 22
+```
+
+```r
+length(table(ethica_phone$model))
 ```
 
 ```
-## Warning: Removed 339 rows containing non-finite values (stat_smooth).
+## [1] 262
 ```
 
+```r
+ethica_phone$cur_os_version_num <- as.numeric(ethica_phone$cur_os_version)
+```
+
+```
+## Warning: NAs introduced by coercion
+```
+
+```r
+ethica_phone$last_os_version_num <- as.numeric(ethica_phone$last_os_version)
+```
+
+```
+## Warning: NAs introduced by coercion
+```
+
+```r
+ethica_phone$os_out_of_date <- ethica_phone$last_os_version_num - ethica_phone$cur_os_version_num
+```
+
+
+```r
+apple <- ethica_phone %>% filter(manufacturer_clean == "Apple")
+
+table(apple$cur_os_version_num) # 12 unique os with 208 devices 
+```
+
+```
+## 
+## 12.1 12.4   13 13.2 13.3 13.6 13.7   14 14.1 14.2 14.3 14.4 
+##    1    1    1    1   34    2   35    2   24   46   34   27
+```
+
+```r
+table(apple$os_out_of_date) # 79 out of date
+```
+
+```
+## 
+##                -0.5                -0.4  -0.200000000000001  -0.100000000000001 
+##                   4                  11                   3                  17 
+## -0.0999999999999996 
+##                  39
+```
+
+```r
+length(table(apple$os_updated_at)) # 79 out of date
+```
+
+```
+## [1] 294
+```
+
+```r
+major_android <- ethica_phone %>% filter(manufacturer_clean == "Goggle" |  manufacturer_clean == "Samsung" | manufacturer_clean == "LGE" | manufacturer_clean == "Huawei")
+
+table(major_android$cur_os_version_num)
+```
+
+```
+## 
+##  5  6  7  9 10 11 
+##  1  1 14 60 38 10
+```
+
+```r
+table(major_android$cur_os_version_num) # 6 unique os with 124 devices 
+```
+
+```
+## 
+##  5  6  7  9 10 11 
+##  1  1 14 60 38 10
+```
+
+```r
+table(major_android$os_out_of_date) # 79 out of date
+```
+
+```
+## 
+## -1 
+## 17
+```
+
+# VERTIAS Data
 
 
 ```r
@@ -2593,11 +2837,12 @@ plot_v_hull <- ggplot(veritas_hul_city) +
                       geom_boxplot(aes(pct_veritas)) + 
                       coord_flip() +
                       facet_wrap(~ city_id) + 
+                      xlab("Percentage") +
                       theme_classic()
 plot(plot_v_hull)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-25-1.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-27-1.png)<!-- -->
 
 ```r
 ggsave("plot_v_hull.jpg", dpi = 150, height = 4, width = 6)
@@ -2610,7 +2855,7 @@ plot_v_hull_gps <- ggplot(veritas_hul_city) +
 plot(plot_v_hull_gps)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-25-2.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-27-2.png)<!-- -->
 
 ```r
 ggsave("plot_v_hull_gps.jpg", dpi = 150, height = 4, width = 6)
@@ -2661,13 +2906,23 @@ veritas_wearing <- read_csv("/Users/dfuller/Documents/INTERACT/veritas_gps/gps_v
 
 Short Mood Scale
 
-# Interventions
+# Interventions SenseDoc Data
 
 ### Victoria
 
 
 ```r
+vic_cma <- get_census(dataset='CA16', regions=list(CMA="59935"),
+                          level='CMA', use_cache = TRUE, geo_format = "sf")
+```
+
+```
+## Reading geo data from local cache.
+```
+
+```r
 vic_sd <- sd_data %>% filter(city_id == "victoria" & in_city == 1) 
+sd_vic_days <- as.data.frame(unique(vic_sd$date))
 
 vic_int <- st_read("/Users/dfuller/Documents/INTERACT/data/intervention/victoria/IBIMS_2017.shp")
 ```
@@ -2793,20 +3048,21 @@ vic_int_t
 vic_int_t$AAA <- vic_int_t$AAA %>% replace_na(0)
 
 vic_int_plot <- ggplot() + 
-                  geom_hex(aes(x = lon, y = lat), binwidth = c(0.005, 0.005), data = vic_sd, alpha = 1) +
+                  geom_sf(data = vic_cma) +
+                  geom_hex(aes(x = lon, y = lat), binwidth = c(0.005, 0.005), data = vic_sd, alpha = 0.8) +
                   scale_fill_gradient2(name="Count of GPS points", low="lightblue", high = "darkblue") +
                   geom_sf(data = vic_int_t, aes(colour = AAA)) +
                   coord_sf(
                       xlim = sf::st_bbox(vic_int_t)[c(1,3)],
                       ylim = sf::st_bbox(vic_int_t)[c(2,4)]) + 
-                  scale_color_manual(name="Cycling Infrascture", labels=c("Existing", "AAA"), values=c("grey80", "black")) +
+                  scale_color_manual(name="Cycling Infrastructure", labels=c("Existing", "AAA"), values=c("grey80", "black")) +
                   annotation_scale() + 
                   theme_map()
 
 plot(vic_int_plot)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-26-1.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-28-1.png)<!-- -->
 
 ```r
 ggsave("vic_int_plot.jpg", dpi = 150, height = 4, width = 6)
@@ -2816,7 +3072,17 @@ ggsave("vic_int_plot.jpg", dpi = 150, height = 4, width = 6)
 
 
 ```r
+van_cma <- get_census(dataset='CA16', regions=list(CMA="59933"),
+                          level='CMA', use_cache = TRUE, geo_format = "sf")
+```
+
+```
+## Reading geo data from local cache.
+```
+
+```r
 van_sd <- sd_data %>% filter(city_id == "vancouver" & in_city == 1) 
+sd_van_days <- as.data.frame(unique(van_sd$date))
 
 van_int <- st_read("/Users/dfuller/Documents/INTERACT/data/intervention/vancouver/greenways.shp")
 ```
@@ -2893,11 +3159,12 @@ van_int$arbutus <- as.factor(van_int$arbutus)
 ggplot() + geom_sf(data = van_int, aes(colour = arbutus))
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-27-1.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-29-1.png)<!-- -->
 
 ```r
 van_int_plot <- ggplot() + 
-                  geom_hex(aes(x = lon, y = lat), binwidth = c(0.005, 0.005), data = van_sd, alpha = 1) +
+                  geom_sf(data = van_cma) +
+                  geom_hex(aes(x = lon, y = lat), binwidth = c(0.005, 0.005), data = van_sd, alpha = 0.8) +
                   scale_fill_gradient2(name="Count of GPS points", low="lightblue", high = "darkblue") +
                   geom_sf(data = van_int, aes(colour = arbutus)) +
                   coord_sf(
@@ -2909,7 +3176,7 @@ van_int_plot <- ggplot() +
 plot(van_int_plot)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-27-2.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-29-2.png)<!-- -->
 
 ```r
 ggsave("van_int_plot.jpg", dpi = 150, height = 4, width = 6)
@@ -2919,7 +3186,17 @@ ggsave("van_int_plot.jpg", dpi = 150, height = 4, width = 6)
 
 
 ```r
+sk_cma <- get_census(dataset='CA16', regions=list(CMA="47725"),
+                          level='CMA', use_cache = TRUE, geo_format = "sf")
+```
+
+```
+## Reading geo data from local cache.
+```
+
+```r
 sk_sd <- sd_data %>% filter(city_id == "saskatoon" & in_city == 1) 
+sd_sk_days <- as.data.frame(unique(sk_sd$date))
 
 sk_int <- st_read("/Users/dfuller/Documents/INTERACT/data/intervention/saskatoon/BRT_lines.shp")
 ```
@@ -3033,11 +3310,12 @@ sk_int_t
 ggplot() + geom_sf(data = sk_int_t, aes(colour = line_name))
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-28-1.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-30-1.png)<!-- -->
 
 ```r
 sk_int_plot <- ggplot() + 
-                  geom_hex(aes(x = lon, y = lat), binwidth = c(0.005, 0.005), data = sk_sd, alpha = 1) +
+                  geom_sf(data = sk_cma) +
+                  geom_hex(aes(x = lon, y = lat), binwidth = c(0.005, 0.005), data = sk_sd, alpha = 0.8) +
                   scale_fill_gradient2(name="Count of GPS points", low="lightblue", high = "darkblue") +
                   geom_sf(data = sk_int_t, aes(colour = line_name)) +
                   coord_sf(
@@ -3049,17 +3327,27 @@ sk_int_plot <- ggplot() +
 plot(sk_int_plot)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-28-2.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-30-2.png)<!-- -->
 
 ```r
-ggsave("sk_int_plot.jpg", dpi = 150, height = 4, width = 6)
+ggsave("sk_int_plot.jpg", dpi = 200, height = 4, width = 6)
 ```
 
 ### Montreal
 
 
 ```r
+mtl_cma <- get_census(dataset='CA16', regions=list(CMA="47725"),
+                          level='CMA', use_cache = TRUE, geo_format = "sf")
+```
+
+```
+## Reading geo data from local cache.
+```
+
+```r
 mtl_sd <- sd_data %>% filter(city_id == "montreal" & in_city == 1) 
+sd_mtl_days <- as.data.frame(unique(mtl_sd$date))
 
 mtl_cyc <- st_read("/Users/dfuller/Documents/INTERACT/data/intervention/montreal/pistes-cyclables.shp")
 ```
@@ -3189,11 +3477,12 @@ mtl_cyc <- st_transform(mtl_cyc, "+proj=longlat +ellps=WGS84 +datum=WGS84")
 ggplot() + geom_sf(data = mtl_cyc)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-29-1.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-31-1.png)<!-- -->
 
 ```r
 mtl_int_plot <- ggplot() + 
-                  geom_hex(aes(x = lon, y = lat), binwidth = c(0.009, 0.009), data = mtl_sd, alpha = 1) +
+                  geom_sf(data = mtl_cma) +
+                  geom_hex(aes(x = lon, y = lat), binwidth = c(0.009, 0.009), data = mtl_sd, alpha = 0.8) +
                   scale_fill_gradient2(name="Count of GPS points", low="lightblue", high = "darkblue") +
                   geom_sf(data = mtl_cyc, aes(colour = Ville_MTL), alpha = 0.5) +
                   geom_point(aes(x = LONGITUDE, y = LATITUDE), data = mtl_pet, alpha = 0.7, colour = "darkgreen", size = 1) +
@@ -3205,11 +3494,119 @@ mtl_int_plot <- ggplot() +
 plot(mtl_int_plot)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-29-2.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-31-2.png)<!-- -->
 
 ```r
 ggsave("mtl_int_plot.jpg", dpi = 150, height = 4, width = 6)
 ```
+
+# Interventions Ethica Data
+
+### Victoria
+
+
+```r
+vic_ethica <- ethica_data %>% filter(city_id == "victoria" & in_city == 1) 
+
+vic_int_plot_eth <- ggplot() + 
+                  geom_sf(data = vic_cma) +
+                  geom_hex(aes(x = lon, y = lat), binwidth = c(0.005, 0.005), data = vic_ethica, alpha = 0.8) +
+                  scale_fill_gradient2(name="Count of GPS points", low="lightblue", high = "darkblue") +
+                  geom_sf(data = vic_int_t, aes(colour = AAA)) +
+                  coord_sf(
+                      xlim = sf::st_bbox(vic_int_t)[c(1,3)],
+                      ylim = sf::st_bbox(vic_int_t)[c(2,4)]) + 
+                  scale_color_manual(name="Cycling Infrastructure", labels=c("Existing", "AAA"), values=c("grey80", "black")) +
+                  annotation_scale() + 
+                  theme_map()
+
+plot(vic_int_plot_eth)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-32-1.png)<!-- -->
+
+```r
+ggsave("vic_int_plot_eth.jpg", dpi = 150, height = 4, width = 6)
+```
+
+### Vancouver
+
+
+```r
+van_ethica <- ethica_data %>% filter(city_id == "vancouver" & in_city == 1) 
+
+van_int_plot_eth <- ggplot() + 
+                  geom_sf(data = van_cma) +
+                  geom_hex(aes(x = lon, y = lat), binwidth = c(0.005, 0.005), data = van_ethica, alpha = 0.8) +
+                  scale_fill_gradient2(name="Count of GPS points", low="lightblue", high = "darkblue") +
+                  geom_sf(data = van_int, aes(colour = arbutus)) +
+                  coord_sf(
+                      xlim = sf::st_bbox(van_int)[c(1,3)],
+                      ylim = sf::st_bbox(van_int)[c(2,4)]) + 
+                  scale_color_manual(name="Greenways", labels=c("Existing", "Arbutus"), values=c("grey80", "black")) +
+                  annotation_scale() + 
+                  theme_map()
+plot(van_int_plot_eth)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-33-1.png)<!-- -->
+
+```r
+ggsave("van_int_plot_eth.jpg", dpi = 150, height = 4, width = 6)
+```
+
+### Saskatoon
+
+
+```r
+sk_eth <- ethica_data %>% filter(city_id == "saskatoon" & in_city == 1) 
+
+sk_int_plot_eth <- ggplot() + 
+                  geom_sf(data = sk_cma) +
+                  geom_hex(aes(x = lon, y = lat), binwidth = c(0.005, 0.005), data = sk_eth, alpha = 0.8) +
+                  scale_fill_gradient2(name="Count of GPS points", low="lightblue", high = "darkblue") +
+                  geom_sf(data = sk_int_t, aes(colour = line_name)) +
+                  coord_sf(
+                      xlim = sf::st_bbox(sk_int_t)[c(1,3)],
+                      ylim = sf::st_bbox(sk_int_t)[c(2,4)]) + 
+                  scale_color_manual(name="BRT Routes", labels=c("Route 1", "Route 2", "Route 3"), values=c("grey20", "grey50", "grey80")) +
+                  annotation_scale() + 
+                  theme_map()
+plot(sk_int_plot_eth)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-34-1.png)<!-- -->
+
+```r
+ggsave("sk_int_plot_eth.jpg", dpi = 200, height = 4, width = 6)
+```
+
+### Montreal
+
+
+```r
+ethica_mtl <- ethica_data %>% filter(city_id == "montreal" & in_city == 1) 
+
+mtl_int_plot_eth <- ggplot() + 
+                  geom_sf(data = mtl_cma) +
+                  geom_hex(aes(x = lon, y = lat), binwidth = c(0.009, 0.009), data = ethica_mtl, alpha = 0.8) +
+                  scale_fill_gradient2(name="Count of GPS points", low="lightblue", high = "darkblue") +
+                  geom_sf(data = mtl_cyc, aes(colour = Ville_MTL), alpha = 0.5) +
+                  geom_point(aes(x = LONGITUDE, y = LATITUDE), data = mtl_pet, alpha = 0.7, colour = "darkgreen", size = 1) +
+                  coord_sf(
+                      xlim = sf::st_bbox(mtl_cyc)[c(1,3)],
+                      ylim = sf::st_bbox(mtl_cyc)[c(2,4)]) + 
+                  scale_color_manual(name="Existing Cycling Routes", labels=c("Montreal", "Not Montreal"), values=c("grey20", "grey50")) +                  annotation_scale() + 
+                  theme_map()
+plot(mtl_int_plot_eth)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-35-1.png)<!-- -->
+
+```r
+ggsave("mtl_int_plot_eth.jpg", dpi = 150, height = 4, width = 6)
+```
+
 
 # GPS Maps
 
@@ -3232,7 +3629,7 @@ vic_basemap <- get_map(c(-123.5, 48.5),
 plot(vic_basemap)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-30-1.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-36-1.png)<!-- -->
 
 ```r
 vic_points <- ggmap(vic_basemap) + 
@@ -3247,7 +3644,7 @@ plot(vic_points)
 ## Warning: Removed 50 rows containing non-finite values (stat_bin2d).
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-30-2.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-36-2.png)<!-- -->
 
 ```r
 ggsave("vic_points.jpg", dpi = 150, height = 4, width = 6)
@@ -3278,7 +3675,7 @@ vic_basemap_zoom <- get_map(location = "Victoria, BC, Canada",
 plot(vic_basemap_zoom)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-30-3.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-36-3.png)<!-- -->
 
 ```r
 vic_points_zoom <- ggmap(vic_basemap_zoom) + 
@@ -3290,21 +3687,21 @@ plot(vic_points_zoom)
 ```
 
 ```
-## Warning: Removed 181406 rows containing non-finite values (stat_bin2d).
+## Warning: Removed 178695 rows containing non-finite values (stat_bin2d).
 ```
 
 ```
 ## Warning: Removed 6 rows containing missing values (geom_tile).
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-30-4.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-36-4.png)<!-- -->
 
 ```r
 ggsave("vic_points_zoom.jpg", dpi = 150, height = 4, width = 6)
 ```
 
 ```
-## Warning: Removed 181406 rows containing non-finite values (stat_bin2d).
+## Warning: Removed 178695 rows containing non-finite values (stat_bin2d).
 
 ## Warning: Removed 6 rows containing missing values (geom_tile).
 ```
@@ -3328,7 +3725,7 @@ van_basemap <- get_map(c(-122.9, 49.2),
 plot(van_basemap)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-31-1.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-37-1.png)<!-- -->
 
 ```r
 van_points <- ggmap(van_basemap) + 
@@ -3343,7 +3740,7 @@ plot(van_points)
 ## Warning: Removed 83 rows containing non-finite values (stat_bin2d).
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-31-2.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-37-2.png)<!-- -->
 
 ```r
 ggsave("van_points.jpg", dpi = 150, height = 4, width = 6)
@@ -3370,7 +3767,7 @@ van_basemap_zoom <- get_map(c(-123.15, 49.27),
 plot(van_basemap_zoom)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-31-3.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-37-3.png)<!-- -->
 
 ```r
 van_points_zoom <- ggmap(van_basemap_zoom) + 
@@ -3382,21 +3779,21 @@ plot(van_points_zoom)
 ```
 
 ```
-## Warning: Removed 184769 rows containing non-finite values (stat_bin2d).
+## Warning: Removed 183724 rows containing non-finite values (stat_bin2d).
 ```
 
 ```
 ## Warning: Removed 33 rows containing missing values (geom_tile).
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-31-4.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-37-4.png)<!-- -->
 
 ```r
 ggsave("van_points_zoom.jpg", dpi = 150, height = 4, width = 6)
 ```
 
 ```
-## Warning: Removed 184769 rows containing non-finite values (stat_bin2d).
+## Warning: Removed 183724 rows containing non-finite values (stat_bin2d).
 
 ## Warning: Removed 33 rows containing missing values (geom_tile).
 ```
@@ -3424,7 +3821,7 @@ sk_basemap <- get_map(location = "Saskatoon, Saskatchewan, Canada",
 plot(sk_basemap)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-32-1.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-38-1.png)<!-- -->
 
 ```r
 sk_points <- ggmap(sk_basemap) + 
@@ -3438,7 +3835,7 @@ plot(sk_points)
 ## Warning: Removed 324 rows containing non-finite values (stat_bin2d).
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-32-2.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-38-2.png)<!-- -->
 
 ```r
 ggsave("sk_points.jpg", dpi = 150, height = 4, width = 6)
@@ -3465,7 +3862,7 @@ sk_basemap_zoom <- get_map(c(-106.65, 52.14),
 plot(sk_basemap_zoom)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-32-3.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-38-3.png)<!-- -->
 
 ```r
 sk_points_zoom <- ggmap(sk_basemap_zoom) + 
@@ -3477,17 +3874,17 @@ plot(sk_points_zoom)
 ```
 
 ```
-## Warning: Removed 5460 rows containing non-finite values (stat_bin2d).
+## Warning: Removed 4461 rows containing non-finite values (stat_bin2d).
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-32-4.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-38-4.png)<!-- -->
 
 ```r
 ggsave("sk_points_zoom.jpg", dpi = 150, height = 4, width = 6)
 ```
 
 ```
-## Warning: Removed 5460 rows containing non-finite values (stat_bin2d).
+## Warning: Removed 4461 rows containing non-finite values (stat_bin2d).
 ```
 
 ### Montreal
@@ -3513,7 +3910,7 @@ mtl_basemap <- get_map(location = "Montreal, Quebec, Canada",
 plot(mtl_basemap)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-33-1.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-39-1.png)<!-- -->
 
 ```r
 mtl_points <- ggmap(mtl_basemap) + 
@@ -3525,17 +3922,17 @@ plot(mtl_points)
 ```
 
 ```
-## Warning: Removed 3101 rows containing non-finite values (stat_bin2d).
+## Warning: Removed 3053 rows containing non-finite values (stat_bin2d).
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-33-2.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-39-2.png)<!-- -->
 
 ```r
 ggsave("mtl_points.jpg", dpi = 150, height = 4, width = 6)
 ```
 
 ```
-## Warning: Removed 3101 rows containing non-finite values (stat_bin2d).
+## Warning: Removed 3053 rows containing non-finite values (stat_bin2d).
 ```
 
 ```r
@@ -3555,7 +3952,7 @@ mtl_basemap_zoom <- get_map(c(-73.6, 45.5),
 plot(mtl_basemap_zoom)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-33-3.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-39-3.png)<!-- -->
 
 ```r
 mtl_points_zoom <- ggmap(mtl_basemap_zoom) + 
@@ -3567,25 +3964,299 @@ plot(mtl_points_zoom)
 ```
 
 ```
-## Warning: Removed 174291 rows containing non-finite values (stat_bin2d).
+## Warning: Removed 172088 rows containing non-finite values (stat_bin2d).
 ```
 
 ```
 ## Warning: Removed 56 rows containing missing values (geom_tile).
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-33-4.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-39-4.png)<!-- -->
 
 ```r
 ggsave("mtl_points_zoom.jpg", dpi = 150, height = 4, width = 6)
 ```
 
 ```
-## Warning: Removed 174291 rows containing non-finite values (stat_bin2d).
+## Warning: Removed 172088 rows containing non-finite values (stat_bin2d).
 
 ## Warning: Removed 56 rows containing missing values (geom_tile).
 ```
 
+## Sensedoc and Ethica Comparisons per day
+
+### Victoria
+
+```r
+### Victoria
+vic_eth <- ethica_data %>% filter(city_id == "victoria" & in_city == 1) 
+vic_eth_sd <- inner_join(vic_sd, vic_eth, by = c("interact_id", "utcdate", "city_id"))
+table(vic_eth_sd$interact_id)  ### 40 participants
+```
+
+```
+## 
+## 101050476 101061024 101108039 101143070 101180124 101201381 101202069 101215885 
+##       107        10       139        92       177       224       251        11 
+## 101228883 101253378 101294250 101310422 101333673 101356709 101365793 101372253 
+##         7       113       101       127       869         8       142        43 
+## 101382479 101389055 101407396 101415303 101423098 101474667 101482753 101488244 
+##        75        22       155       119        60       128       174       234 
+## 101493098 101518271 101534317 101541425 101550026 101553232 101555830 101564348 
+##       975       149       108       111        67       293       192        24 
+## 101657771 101664312 101668945 101747215 101794991 101819997 101830987 101869520 
+##        78       125         1        56        75        64       162       178 
+## 101960171 101977090 101978056 
+##       405        23        13
+```
+
+```r
+vic_eth_101493098 <- vic_eth_sd %>% filter(interact_id == "101493098" & date.x != "2017-07-27")
+
+### Victoria 
+vic_da <- get_census(dataset='CA16', regions=list(CMA="59935"),
+                          level='DA', use_cache = TRUE, geo_format = "sf")
+```
+
+```
+## Reading geo data from local cache.
+```
+
+```r
+ethica_vic.jpg <- ggplot() + 
+                  geom_sf(data = vic_da, alpha = 0.5, colour = "grey50") +
+                  geom_point(aes(x = lon.x, y = lat.x), data = vic_eth_sd, alpha = 0.5, colour = "darkgreen") +
+                  geom_point(aes(x = lon.y, y = lat.y), data = vic_eth_sd, alpha = 0.5, colour = "purple") +
+                  coord_sf(
+                      xlim = sf::st_bbox(vic_int_t)[c(1,3)],
+                      ylim = sf::st_bbox(vic_int_t)[c(2,4)]) +
+                  annotation_scale() + 
+                  theme_map()
+plot(ethica_vic.jpg)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-40-1.png)<!-- -->
+
+```r
+ggsave("ethica_vic.jpg", dpi = 150, height = 4, width = 6)
+
+### Victoria 101493098
+vic_101493098_sd <- ggplot() + 
+                  #geom_sf(data = vic_da, alpha = 0.5, colour = "grey50") +
+                  geom_hex(aes(x = lon.x, y = lat.x), data = vic_eth_101493098, binwidth = c(0.009, 0.009)) +
+                  coord_sf(
+                      xlim = sf::st_bbox(vic_int_t)[c(1,3)],
+                      ylim = sf::st_bbox(vic_int_t)[c(2,4)]) +
+                  #annotation_scale() + 
+                  scale_fill_gradient(name="Count of GPS points") +
+                  facet_wrap(~ date.x) +
+                  labs(x = "Longitude", y = "Latitude") +
+                  theme_minimal() + 
+                  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+                  scale_y_continuous(breaks=seq(48.44,48.54)) +
+                  scale_x_continuous(breaks=c(123.44, -123.30))
+
+plot(vic_101493098_sd)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-40-2.png)<!-- -->
+
+```r
+ggsave("vic_101493098_sd.jpg", dpi = 150, height = 4, width = 6)
+
+vic_101493098_eth <- ggplot() + 
+                  #geom_sf(data = vic_da, alpha = 0.5, colour = "grey50") +
+                  geom_hex(aes(x = lon.y, y = lat.y), data = vic_eth_101493098, binwidth = c(0.009, 0.009)) +
+                  coord_sf(
+                      xlim = sf::st_bbox(vic_int_t)[c(1,3)],
+                      ylim = sf::st_bbox(vic_int_t)[c(2,4)]) +
+                  #annotation_scale() + 
+                  scale_fill_gradient(name="Count of GPS points") +
+                  facet_wrap(~ date.x) +
+                  labs(x = "Longitude", y = "Latitude") +
+                  theme_minimal() + 
+                  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+                  scale_y_continuous(breaks=seq(48.44,48.54)) +
+                  scale_x_continuous(breaks=c(123.44, -123.30))
+               
+plot(vic_101493098_eth)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-40-3.png)<!-- -->
+
+```r
+ggsave("vic_101493098_ethica.jpg", dpi = 150, height = 4, width = 6)
+```
+
+## Sensedoc and Ethica Comparisons per day
+
+### Vancouver
+
+```r
+### Vancouver
+van_eth <- ethica_data %>% filter(city_id == "vancouver" & in_city == 1) 
+van_eth_sd <- inner_join(van_sd, van_eth, by = c("interact_id", "utcdate", "city_id"))
+table(van_eth_sd$interact_id)  ### 38 participants
+```
+
+```
+## 
+## 201005131 201047893 201050305 201085786 201089691 201185322 201185816 201206867 
+##        93        54       283       162       181       125        93       178 
+## 201219100 201221004 201233360 201259654 201298606 201421800 201440082 201501554 
+##       587       173        56       713        69       226       163       481 
+## 201501658 201518284 201595427 201611721 201702497 201759149 201771612 201781641 
+##       179         6       365        30       118      1277       283        50 
+## 201807747 201808807 201822987 201841665 201873796 201906396 201907304 201907402 
+##       139         8       276       190       618       877       606       231 
+## 201943028 201958047 
+##       181       797
+```
+
+```r
+van_eth_201759149 <- van_eth_sd %>% filter(interact_id == "201759149")
+
+### Vancouver
+van_da <- get_census(dataset='CA16', regions=list(CMA="59933"),
+                          level='DA', use_cache = TRUE, geo_format = "sf")
+```
+
+```
+## Reading geo data from local cache.
+```
+
+```r
+ethica_van <- ggplot() + 
+                  geom_sf(data = van_da, alpha = 0.5, colour = "grey50") +
+                  geom_point(aes(x = lon.x, y = lat.x), data = van_eth_201759149, alpha = 0.5, colour = "darkgreen") +
+                  geom_point(aes(x = lon.y, y = lat.y), data = van_eth_201759149, alpha = 0.5, colour = "purple") +
+                  coord_sf(
+                      xlim = sf::st_bbox(van_int)[c(1,3)],
+                      ylim = sf::st_bbox(van_int)[c(2,4)]) +
+                  annotation_scale() + 
+                  theme_map()
+plot(ethica_van)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-41-1.png)<!-- -->
+
+```r
+ggsave("ethica_van.jpg", dpi = 150, height = 4, width = 6)
+```
+
+## Sensedoc and Ethica Comparisons per day
+
+### Saskatoon
+
+
+```r
+### Saskatoon
+sk_eth <- ethica_data %>% filter(city_id == "saskatoon" & in_city == 1) 
+sk_eth_sd <- inner_join(sk_sd, sk_eth, by = c("interact_id", "utcdate", "city_id"))
+table(sk_eth_sd$interact_id)  ### 38 participants
+```
+
+```
+## 
+## 302056620 302103402 302146561 302160728 302168004 302168848 302201045 302226167 
+##       102       140       458      1450       586       160      1032      1154 
+## 302260551 302350198 302358375 302387519 302411013 302417689 302435759 302445933 
+##      1212       604        98        52       828       412       142        50 
+## 302446738 302466932 302515834 302539875 302544861 302624918 302665073 302680215 
+##       328       262      1040        86       540        56        72       174 
+## 302699137 302730391 302769937 302826527 302837017 302886690 302974083 302975201 
+##       218        76       772        56      1316       256       440        82 
+## 302982550 302988730 
+##       986      1058
+```
+
+```r
+sk_eth_302837017 <- sk_eth_sd %>% filter(interact_id == "302837017")
+
+### Saskatoon DAs
+sk_da <- get_census(dataset='CA16', regions=list(CMA="47725"),
+                          level='DA', use_cache = TRUE, geo_format = "sf")
+```
+
+```
+## Reading geo data from local cache.
+```
+
+```r
+ethica_sk <- ggplot() + 
+                  geom_sf(data = sk_da, alpha = 0.5, colour = "grey50") +
+                  geom_point(aes(x = lon.x, y = lat.x), data = sk_eth_302837017, alpha = 0.5, colour = "darkgreen") +
+                  geom_point(aes(x = lon.y, y = lat.y), data = sk_eth_302837017, alpha = 0.5, colour = "purple") +
+                  coord_sf(
+                      xlim = sf::st_bbox(sk_int_t)[c(1,3)],
+                      ylim = sf::st_bbox(sk_int_t)[c(2,4)]) +
+                  annotation_scale() + 
+                  theme_map()
+plot(ethica_sk)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-42-1.png)<!-- -->
+
+```r
+ggsave("ethica_sk.jpg", dpi = 150, height = 4, width = 6)
+```
+
+## Sensedoc and Ethica Comparisons per day
+
+### Montreal
+
+
+```r
+### Montreal
+mtl_eth <- ethica_data %>% filter(city_id == "montreal" & in_city == 1) 
+mtl_eth_sd <- inner_join(mtl_sd, mtl_eth, by = c("interact_id", "utcdate", "city_id"))
+table(mtl_eth_sd$interact_id)  ### 9 participants
+```
+
+```
+## 
+## 401001817 401013270 401016540 401034467 401102101 401114651 401152941 401178032 
+##       270         5       183       257         2        38        55        27 
+## 401178700 401201353 401213122 401387517 401400173 401440362 401442080 401449636 
+##         8        70       205       284       599       469        59         9 
+## 401450953 401480375 401507474 401519033 401522186 401522734 401553707 401615346 
+##       170       227       376        28       194         2       109       150 
+## 401664309 401674061 401691038 401702019 401706561 401709298 401747663 401755253 
+##       102        11        60        33       108       235        41        61 
+## 401793448 401794213 401809607 401839530 401841090 401842092 401937896 401952301 
+##        16       116        80        76       114       280        31       551 
+## 401968762 401977519 401998921 
+##       229       336         4
+```
+
+```r
+mtl_eth_401977519 <- mtl_eth_sd %>% filter(interact_id == "401977519")
+
+### Montreal
+mtl_da <- get_census(dataset='CA16', regions=list(CMA="47725"),
+                          level='DA', use_cache = TRUE, geo_format = "sf")
+```
+
+```
+## Reading geo data from local cache.
+```
+
+```r
+ethica_mtl <- ggplot() + 
+                  geom_sf(data = mtl_da, alpha = 0.5) +
+                  geom_point(aes(x = lon.x, y = lat.x), data = mtl_eth_401977519, alpha = 0.5, colour = "darkgreen") +
+                  geom_point(aes(x = lon.y, y = lat.y), data = mtl_eth_401977519, alpha = 0.5, colour = "purple") 
+                  #coord_sf(
+                  #    xlim = sf::st_bbox(mtl_cyc)[c(1,3)],
+                  #    ylim = sf::st_bbox(mtl_cyc)[c(2,4)]) 
+plot(ethica_mtl)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-43-1.png)<!-- -->
+
+```r
+ggsave("ethica_mtl.jpg", dpi = 150, height = 4, width = 6)
+```
 
 # Participant Data Flow
 
@@ -3714,7 +4385,7 @@ table(flow_vic$ethica) ### Number of Ethica Participants
 ```
 ## 
 ##  1 
-## 94
+## 93
 ```
 
 ```r
@@ -3731,7 +4402,7 @@ table(flow_vic$sensedoc, flow_vic$sd_ethica) ### Number of Ethica and SenseDoc P
 ```
 ##    
 ##      2
-##   1 72
+##   1 71
 ```
 
 ## Vancouver
@@ -3857,7 +4528,7 @@ table(flow_van$ethica) ### Number of Ethica Participants
 ```
 ## 
 ##   1 
-## 132
+## 129
 ```
 
 ```r
@@ -3967,7 +4638,7 @@ table(flow_sk$sensedoc)  ### Number of SenseDoc Participants
 ```
 ## 
 ##  1 
-## 86
+## 85
 ```
 
 ```r
@@ -4001,7 +4672,7 @@ table(flow_sk$ethica) ### Number of Ethica Participants
 ```
 ## 
 ##   1 
-## 117
+## 116
 ```
 
 ```r
@@ -4018,7 +4689,7 @@ table(flow_sk$sensedoc, flow_sk$sd_ethica) ### Number of Ethica and SenseDoc Par
 ```
 ##    
 ##      2
-##   1 61
+##   1 60
 ```
 
 ## Montreal
@@ -4144,8 +4815,8 @@ table(flow_mtl$ethica) ### Number of Ethica Participants
 
 ```
 ## 
-##  1 
-## 93
+##   1 
+## 534
 ```
 
 ```r
@@ -4161,6 +4832,6 @@ table(flow_mtl$sensedoc, flow_mtl$sd_ethica) ### Number of Ethica and SenseDoc P
 
 ```
 ##    
-##      2
-##   1 28
+##       2
+##   1 155
 ```
