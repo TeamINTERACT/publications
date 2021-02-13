@@ -21,7 +21,7 @@ library(tidyverse)
 ```
 
 ```
-## ── Attaching packages ────────────────────────────────────────────────────────────────────────────────────────────── tidyverse 1.3.0 ──
+## ── Attaching packages ─────────────────────────────────────────────────────────────────────────────────────── tidyverse 1.3.0 ──
 ```
 
 ```
@@ -32,7 +32,7 @@ library(tidyverse)
 ```
 
 ```
-## ── Conflicts ───────────────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+## ── Conflicts ────────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
 ## x dplyr::filter() masks stats::filter()
 ## x dplyr::lag()    masks stats::lag()
 ```
@@ -132,6 +132,8 @@ library(cowplot)
 ```r
 library(ggspatial)
 library(knitr)
+
+setwd("/Users/dfuller/Dropbox/Projects/INTERACT_github/publications/baseline_paper_2021_Fuller")
 ```
 
 
@@ -1826,6 +1828,28 @@ table(data$belonging)
 ```
 
 ```r
+data <- data %>% 
+          mutate(belonging_cat = case_when(
+            belonging == 1 ~ 1, 
+            belonging == 2 ~ 1, 
+            belonging == 3 ~ 0, 
+            belonging == 4 ~ 0, 
+            belonging == 5 ~ 0
+            ))
+
+table(data$city_id, data$belonging_cat)
+```
+
+```
+##            
+##               0   1
+##   Montréal  572 514
+##   Saskatoon 158 142
+##   Vancouver 122 200
+##   Victoria   51 114
+```
+
+```r
 belonging_table <- data %>%
                 group_by(city_id) %>%
                   summarize(
@@ -2703,26 +2727,8 @@ table(apple$os_out_of_date) # 79 out of date
 ```
 
 ```r
-length(table(apple$os_updated_at)) # 79 out of date
-```
-
-```
-## [1] 294
-```
-
-```r
 major_android <- ethica_phone %>% filter(manufacturer_clean == "Goggle" |  manufacturer_clean == "Samsung" | manufacturer_clean == "LGE" | manufacturer_clean == "Huawei")
 
-table(major_android$cur_os_version_num)
-```
-
-```
-## 
-##  5  6  7  9 10 11 
-##  1  1 14 60 38 10
-```
-
-```r
 table(major_android$cur_os_version_num) # 6 unique os with 124 devices 
 ```
 
@@ -2733,7 +2739,7 @@ table(major_android$cur_os_version_num) # 6 unique os with 124 devices
 ```
 
 ```r
-table(major_android$os_out_of_date) # 79 out of date
+table(major_android$os_out_of_date) # 17 out of date
 ```
 
 ```
@@ -2837,8 +2843,8 @@ plot_v_hull <- ggplot(veritas_hul_city) +
                       geom_boxplot(aes(pct_veritas)) + 
                       coord_flip() +
                       facet_wrap(~ city_id) + 
-                      xlab("Percentage") +
-                      theme_classic()
+                      xlab("Percentage") + 
+                      theme_bw()
 plot(plot_v_hull)
 ```
 
