@@ -21,7 +21,7 @@ library(tidyverse)
 ```
 
 ```
-## ── Attaching packages ─────────────────────────────────────────────────────────────────────────────────────── tidyverse 1.3.0 ──
+## ── Attaching packages ──────────────────────────────────────────── tidyverse 1.3.0 ──
 ```
 
 ```
@@ -32,7 +32,7 @@ library(tidyverse)
 ```
 
 ```
-## ── Conflicts ────────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+## ── Conflicts ─────────────────────────────────────────────── tidyverse_conflicts() ──
 ## x dplyr::filter() masks stats::filter()
 ## x dplyr::lag()    masks stats::lag()
 ```
@@ -3996,6 +3996,14 @@ ggsave("mtl_points_zoom.jpg", dpi = 150, height = 4, width = 6)
 ```r
 ### Victoria
 vic_eth <- ethica_data %>% filter(city_id == "victoria" & in_city == 1) 
+length(vic_eth$interact_id)
+```
+
+```
+## [1] 97342
+```
+
+```r
 vic_eth_sd <- inner_join(vic_sd, vic_eth, by = c("interact_id", "utcdate", "city_id"))
 table(vic_eth_sd$interact_id)  ### 40 participants
 ```
@@ -4101,6 +4109,14 @@ ggsave("vic_101493098_ethica.jpg", dpi = 150, height = 4, width = 6)
 ```r
 ### Vancouver
 van_eth <- ethica_data %>% filter(city_id == "vancouver" & in_city == 1) 
+length(van_eth$interact_id)
+```
+
+```
+## [1] 169877
+```
+
+```r
 van_eth_sd <- inner_join(van_sd, van_eth, by = c("interact_id", "utcdate", "city_id"))
 table(van_eth_sd$interact_id)  ### 38 participants
 ```
@@ -4158,6 +4174,14 @@ ggsave("ethica_van.jpg", dpi = 150, height = 4, width = 6)
 ```r
 ### Saskatoon
 sk_eth <- ethica_data %>% filter(city_id == "saskatoon" & in_city == 1) 
+length(sk_eth$interact_id)
+```
+
+```
+## [1] 227610
+```
+
+```r
 sk_eth_sd <- inner_join(sk_sd, sk_eth, by = c("interact_id", "utcdate", "city_id"))
 table(sk_eth_sd$interact_id)  ### 38 participants
 ```
@@ -4215,6 +4239,14 @@ ggsave("ethica_sk.jpg", dpi = 150, height = 4, width = 6)
 ```r
 ### Montreal
 mtl_eth <- ethica_data %>% filter(city_id == "montreal" & in_city == 1) 
+length(mtl_eth$interact_id)
+```
+
+```
+## [1] 635184
+```
+
+```r
 mtl_eth_sd <- inner_join(mtl_sd, mtl_eth, by = c("interact_id", "utcdate", "city_id"))
 table(mtl_eth_sd$interact_id)  ### 9 participants
 ```
