@@ -2,29 +2,153 @@
 title: "accel_metrics_2021_Fuller"
 author: "Daniel Fuller"
 date: "22/02/2021"
-output: html_document
+output:
+  html_document: 
+    keep_md: yes
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+## Required packages
+```{r}
+library(tidyverse)
+library(lubridate)
+library(ggplot2)
+library(naniar)
+library(ggmap)
+library(ggthemes)
+library(sf)
+library(rgeos)
+library(cancensus)
+library(cowplot)
+library(ggspatial)
+library(knitr)
+library(corrr)
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+setwd("/Users/dfuller/Dropbox/Projects/INTERACT_github/publications/accel_metrics_2021_Fuller")
 ```
 
-## Including Plots
+## Analysis Plan 
 
-You can also embed plots, for example:
+1. Health Survey wrangling
+2. Accelerometer Metrics 
+3. Accel Metrics + Health Survey
+    * Physical activity (self-report)
+    * Happiness
+    * Social connectedness 
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+### Read in health data
+
+```{r}
+data <- read_csv("/Users/dfuller/Documents/INTERACT/data/health_clean.csv")
+
+data <- data %>% select(interact_id, city_id, date_of_survey, gwb_happiness, belonging, belonging_cat, pwb_wellbeing, education_recode, age, gender_recode2, income_recode, leisure_modpa_freq, work_modpa_freq, work_vigpa_freq, leisure_vigpa_freq, sit_weekday, sit_weekend)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+### Happiness
+
+```{r}
+summary(data$gwb_happiness)
+table(data$gwb_happiness)
+```
+
+### Sense of community belonging
+
+```{r}
+table(data$city_id, data$belonging_cat)
+
+ggplot(data, aes(belonging_cat)) + 
+      geom_bar() + 
+      facet_wrap(~ city_id)
+```
+
+### Read in accel metrics
+
+```{r}
+accel_metrics <- read_csv("/Users/dfuller/Documents/INTERACT/data/SaskatoonW1_three_init_fit_results.csv")
+```
+
+### Join in accel metrics to health survey
+
+```{r}
+health_accel <- left_join(accel_metrics, data, by = "interact_id")
+```
+
+### Associations with self-report activity
+
+```{r}
+### Self report data has a -7 for NA values 
+
+health_accel <- health_accel %>%
+          mutate(across(where(is.numeric), ~na_if(., -7)))
+
+### Creating a mod+vig variable
+
+health_accel$all_mod_vig_freq <- health_accel$leisure_modpa_freq + health_accel$leisure_vigpa_freq +                                  health_accel$work_modpa_freq + health_accel$work_vigpa_freq
+
+### Summary stats on Mod Vig variable
+
+summary(health_accel$all_mod_vig_freq)
+
+mod_vig_pa_histo <- ggplot(health_accel, aes(all_mod_vig_freq)) + 
+                geom_histogram()
+plot(mod_vig_pa_histo)
+```
+
+### Associations with self-report sedentary time
+
+```{r}
+### Weekdays
+summary(health_accel$sit_weekday)
+
+sit_weekday_histo <- ggplot(health_accel, aes(sit_weekday)) + 
+                geom_histogram()
+plot(sit_weekday_histo)
+
+### Weekend days
+summary(health_accel$sit_weekend)
+
+sit_weekend_histo <- ggplot(health_accel, aes(sit_weekend)) + 
+                geom_histogram()
+plot(sit_weekend_histo)
+```
+
+### Correlations
+
+```{r}
+x <- health_accel %>%
+       select(all_mod_vig_freq, sit_weekday, sit_weekend, x1, x2, x3, x4, m1, m2, m3, a1, a2, a2) %>%
+       correlate() %>%    # Create correlation data frame (cor_df)
+       rearrange() %>%  # rearrange by correlations
+       shave() # Shave off the upper triangle for a clean result
+
+fashion(x)
+```
+
+### Correlation plot
+```{r}
+health_accel %>% 
+  select(all_mod_vig_freq, sit_weekday, sit_weekend, x1, x2, x3, x4, m1, m2, m3, a1, a2, a2) %>%
+  correlate() %>% 
+  network_plot(min_cor = .2)
+```
+
+# Physical Activity
+
+### Reading in the physical activity data from SenseDoc
+```{}
+data_temp <- NULL
+
+data_temp <- dir(path = "/Users/dfuller/Documents/INTERACT/data/sensors/", full.names = TRUE, pattern = "*_sd.csv", recursive = TRUE) %>%
+   purrr::map(function(i){
+     dfhx <- read.csv(i, header = TRUE)
+     temp <- bind_rows(data_temp, dfhx)
+   })
+
+sd_data <- bind_rows(data_temp)
+rm(data_temp)
+table(sd_data$city)
+```
