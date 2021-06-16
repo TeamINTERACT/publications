@@ -2898,12 +2898,12 @@ vic_cma <- get_census(dataset='CA16', regions=list(CMA="59935"),
 vic_sd <- sd_data %>% filter(city_id == "victoria" & in_city == 1) 
 sd_vic_days <- as.data.frame(unique(vic_sd$date))
 
-vic_int <- st_read("/Users/dfuller/Documents/INTERACT/data/intervention/victoria/IBIMS_2017.shp")
+vic_int <- st_read("/Users/dfuller/Documents/INTERACT/data/intervention/victoria/IBIMS_2019.shp")
 ```
 
 ```
-## Reading layer `IBIMS_2017' from data source `/Users/dfuller/Documents/INTERACT/data/intervention/victoria/IBIMS_2017.shp' using driver `ESRI Shapefile'
-## Simple feature collection with 2657 features and 9 fields
+## Reading layer `IBIMS_2019' from data source `/Users/dfuller/Documents/INTERACT/data/intervention/victoria/IBIMS_2019.shp' using driver `ESRI Shapefile'
+## Simple feature collection with 2706 features and 9 fields
 ## Geometry type: LINESTRING
 ## Dimension:     XY
 ## Bounding box:  xmin: 467396.862 ymin: 5361697.2745 xmax: 478358.9694 ymax: 5377670.0528
@@ -2984,43 +2984,20 @@ st_crs(vic_int_t)
 ```
 
 ```r
-vic_int_t
+vic_int_t$Notes <- vic_int_t$Notes %>% replace_na(0)
+vic_int_t$AAA <- if_else(vic_int_t$Notes == 0, 0, 1)
+vic_int_t$AAA <- as.factor(vic_int_t$AAA)
+
+table(vic_int_t$AAA)
 ```
 
 ```
-## Simple feature collection with 2657 features and 9 fields
-## Geometry type: LINESTRING
-## Dimension:     XY
-## Bounding box:  xmin: -123.441753799 ymin: 48.4078745718 xmax: -123.29276167 ymax: 48.5512877001
-## Geodetic CRS:  WGS 84
-## First 10 features:
-##          Date            Facility Notes          Length        Length_km
-## 1  2017-01-01     Off-Street Path  <NA>  12.33893564110 0.01233893564110
-## 2  2017-01-01     Off-Street Path  <NA>  82.53371193320 0.08253371193320
-## 3  2017-01-01 Residential Bikeway  <NA>  44.28716218180 0.04428716218180
-## 4  2017-01-01        Painted Lane  <NA> 332.14422417400 0.33214422417400
-## 5  2017-01-01        Painted Lane  <NA>   9.99369095440 0.00999369095440
-## 6  2017-01-01        Painted Lane  <NA> 326.59134600000 0.32659134600000
-## 7  2017-01-01        Painted Lane  <NA>  10.14311651010 0.01014311651010
-## 8  2017-01-01     Off-Street Path  <NA>   9.99580908846 0.00999580908846
-## 9  2017-01-01     Off-Street Path  <NA> 178.63143105300 0.17863143105300
-## 10 2017-01-01     Off-Street Path  <NA>  33.25548566400 0.03325548566400
-##    Municipali Dual_Fac InstallCod  AAA                       geometry
-## 1     Saanich     <NA>          1 <NA> LINESTRING (-123.344041926 ...
-## 2     Saanich     <NA>          1 <NA> LINESTRING (-123.310139115 ...
-## 3    Victoria     <NA>          1 <NA> LINESTRING (-123.3559541 48...
-## 4     Saanich     <NA>          1 <NA> LINESTRING (-123.4035652 48...
-## 5    Victoria     <NA>          1 <NA> LINESTRING (-123.3631926 48...
-## 6    Victoria     <NA>          1 <NA> LINESTRING (-123.363218772 ...
-## 7    Victoria     <NA>          1 <NA> LINESTRING (-123.364161782 ...
-## 8     Saanich     <NA>          1 <NA> LINESTRING (-123.380715693 ...
-## 9     Saanich     <NA>          1 <NA> LINESTRING (-123.380843588 ...
-## 10    Saanich     <NA>          1 <NA> LINESTRING (-123.409202199 ...
+## 
+##    0    1 
+## 2609   97
 ```
 
 ```r
-vic_int_t$AAA <- vic_int_t$AAA %>% replace_na(0)
-
 vic_int_plot <- ggplot() + 
                   geom_sf(data = vic_cma) +
                   geom_hex(aes(x = lon, y = lat), binwidth = c(0.005, 0.005), data = vic_sd, alpha = 0.8) +
@@ -3048,7 +3025,7 @@ Using exposure of 250meters because people may deviate between 160 to 288 meters
 
 
 ```r
-vic_int_t_1 <- filter(vic_int_t, AAA == "V")
+vic_int_t_1 <- filter(vic_int_t, AAA == "1")
 
 vic_int_t_1 <- st_combine(vic_int_t_1)
 vic_int_t_1 <- st_as_sf(vic_int_t_1)
@@ -3083,8 +3060,8 @@ table(vic_sd_sf$exposed)
 
 ```
 ## 
-##       0       1 
-## 1192781   71287
+##      0      1 
+## 994348 269720
 ```
 
 ```r
@@ -4006,7 +3983,7 @@ ggsave("ethica_van.jpg", dpi = 150, height = 4, width = 6)
 ### Victoria SENSEDOC
 van_sd_hex <- ggplot() + 
                   #geom_sf(data = vic_da, alpha = 0.5, colour = "grey50") +
-                  geom_hex(aes(x = lon, y = lat), data = van_sd, binwidth = c(0.002, 0.002)) +
+                  geom_hex(aes(x = lon, y = lat), data = van_sd, binwidth = c(0.003, 0.003)) +
                   coord_sf(
                       xlim = sf::st_bbox(van_int)[c(1,3)],
                       ylim = sf::st_bbox(van_int)[c(2,4)]) +
@@ -4029,7 +4006,7 @@ ggsave("van_sd_hex.jpg", dpi = 150, height = 4, width = 6)
 
 van_eth_hex <- ggplot() + 
                   #geom_sf(data = vic_da, alpha = 0.5, colour = "grey50") +
-                  geom_hex(aes(x = lon, y = lat), data = van_ethica, binwidth = c(0.002, 0.002)) +
+                  geom_hex(aes(x = lon, y = lat), data = van_ethica, binwidth = c(0.003, 0.003)) +
                   coord_sf(
                       xlim = sf::st_bbox(van_int)[c(1,3)],
                       ylim = sf::st_bbox(van_int)[c(2,4)]) +
@@ -4116,7 +4093,7 @@ ggsave("ethica_sk.jpg", dpi = 150, height = 4, width = 6)
 ### Saskatoon SENSEDOC
 sk_sd_hex <- ggplot() + 
                   #geom_sf(data = vic_da, alpha = 0.5, colour = "grey50") +
-                  geom_hex(aes(x = lon, y = lat), data = sk_sd, binwidth = c(0.002, 0.002)) +
+                  geom_hex(aes(x = lon, y = lat), data = sk_sd, binwidth = c(0.003, 0.003)) +
                   coord_sf(
                       xlim = sf::st_bbox(sk_int_t)[c(1,3)],
                       ylim = sf::st_bbox(sk_int_t)[c(2,4)]) +
@@ -4141,7 +4118,7 @@ ggsave("sk_sd_hex.jpg", dpi = 150, height = 4, width = 6)
 
 sk_eth_hex <- ggplot() + 
                   #geom_sf(data = vic_da, alpha = 0.5, colour = "grey50") +
-                  geom_hex(aes(x = lon, y = lat), data = sk_eth, binwidth = c(0.002, 0.002)) +
+                  geom_hex(aes(x = lon, y = lat), data = sk_eth, binwidth = c(0.003, 0.003)) +
                   coord_sf(
                       xlim = sf::st_bbox(sk_int_t)[c(1,3)],
                       ylim = sf::st_bbox(sk_int_t)[c(2,4)]) +
@@ -4228,7 +4205,7 @@ ggsave("ethica_mtl.jpg", dpi = 150, height = 4, width = 6)
 ### Montreal SENSEDOC
 mtl_sd_hex <- ggplot() + 
                   #geom_sf(data = mtl_da, alpha = 0.1, colour = "white") +
-                  geom_hex(aes(x = lon, y = lat), data = mtl_sd, binwidth = c(0.004, 0.004)) +
+                  geom_hex(aes(x = lon, y = lat), data = mtl_sd, binwidth = c(0.003, 0.003)) +
                   coord_sf(
                       xlim = sf::st_bbox(mtl_cyc)[c(1,3)],
                       ylim = sf::st_bbox(mtl_cyc)[c(2,4)]) +
@@ -4253,7 +4230,7 @@ ggsave("mtl_sd_hex.jpg", dpi = 150, height = 4, width = 6)
 
 mtl_eth_hex <- ggplot() + 
                   #geom_sf(data = vic_da, alpha = 0.5, colour = "grey50") +
-                  geom_hex(aes(x = lon, y = lat), data = mtl_eth, binwidth = c(0.004, 0.004)) +
+                  geom_hex(aes(x = lon, y = lat), data = mtl_eth, binwidth = c(0.003, 0.003)) +
                   coord_sf(
                       xlim = sf::st_bbox(mtl_cyc)[c(1,3)],
                       ylim = sf::st_bbox(mtl_cyc)[c(2,4)]) +
@@ -4298,7 +4275,7 @@ table(vic_eth_sf$exposed)
 ```
 ## 
 ##     0     1 
-## 90819  6523
+## 78818 18524
 ```
 
 ```r
@@ -4307,7 +4284,7 @@ vic_eth$exposed <- as.factor(vic_eth_sf$exposed)
 exposure_vic_eth <- ggplot() + 
         geom_point(aes(x = lon, y = lat, colour = exposed), data = vic_eth, alpha = 0.2) +
         annotation_scale() + 
-        geom_sf(data = van_int_1_250, alpha=0.01) +
+        geom_sf(data = vic_int_t_250, alpha=0.01) +
         scale_color_manual(labels = c("Not Exposed", "Exposed"),
                      values = c("grey80", "red")) +
         labs(color = "Exposure") + 
@@ -4349,8 +4326,8 @@ table(van_eth_sf$exposed)
 van_eth$exposed <- as.factor(van_eth_sf$exposed)
 
 exposure_van_eth <- ggplot() +         
-        geom_sf(data = van_int_1_250, alpha=0.01) +
         geom_point(aes(x = lon, y = lat, colour = exposed), data = van_eth, alpha = 0.2) +
+        geom_sf(data = van_int_1_250, alpha=0.01) +
         annotation_scale() + 
         scale_color_manual(labels = c("Not Exposed", "Exposed"),
                      values = c("grey80", "red")) +
@@ -4408,7 +4385,6 @@ plot(exposure_sk_eth)
 ```r
 ggsave("exposure_sk_eth.jpg", dpi = 150, height = 4, width = 6)
 ```
-
 
 #### Montreal Ethica Exposure
 
@@ -4477,17 +4453,48 @@ ggsave("exposure_figure_eth.jpg", dpi = 150, height = 4, width = 6)
 
 ```r
 sd <- rbind(vic_sd, van_sd, sk_sd, mtl_sd)
+
+sd <- sd %>%
+          mutate(city_id = case_when(
+            city_id == "montreal" ~ "Montreal",
+            city_id == "victoria" ~ "Victoria",
+            city_id == "vancouver" ~ "Vancouver",     
+            city_id == "saskatoon" ~ "Saskatoon"
+           ))
+
 table(sd$exposed)
 ```
 
 ```
 ## 
 ##       0       1 
-## 2133743  578549
+## 1935310  776982
 ```
 
 ```r
 sd$exposed <- as.numeric(as.character(sd$exposed))
+sd$hour <- hour(sd$utcdate)
+
+exposure_sd_hour <- sd %>%
+                  group_by(interact_id, city_id, date, hour) %>%
+                    summarise(
+                      tot_minutes = sum(minutes),
+                      abs_exposure = sum(exposed), 
+                      rel_exposure = abs_exposure/tot_minutes
+                    )
+```
+
+```
+## `summarise()` has grouped output by 'interact_id', 'city_id', 'date'. You can override using the `.groups` argument.
+```
+
+```r
+exposure_sd_hour <- exposure_sd_hour %>%
+                  group_by(city_id, hour) %>%
+                    mutate(
+                      mean_abs_exposure = mean(abs_exposure), 
+                      mean_rel_exposure = mean(rel_exposure)
+                    )
 
 exposure_sd <- sd %>%
                   group_by(interact_id, city_id, date) %>%
@@ -4511,16 +4518,80 @@ exposure_sd %>% group_by(city_id) %>%
 ## # A tibble: 8 x 14
 ##   city_id   variable        n   min   max  median     q1      q3     iqr     mad
 ##   <chr>     <chr>       <dbl> <dbl> <dbl>   <dbl>  <dbl>   <dbl>   <dbl>   <dbl>
-## 1 montreal  abs_exposu…  1658     0   832  25      4     102      98      37.1  
-## 2 montreal  rel_exposu…  1658     0     1   0.134  0.014   0.492   0.478   0.199
-## 3 saskatoon abs_exposu…   771     0  1067 259     91     489     398     274.   
-## 4 saskatoon rel_exposu…   771     0     1   0.931  0.4     1       0.6     0.102
-## 5 vancouver abs_exposu…  1520     0   891  13      1      71      70      19.3  
-## 6 vancouver rel_exposu…  1520     0     1   0.047  0.003   0.358   0.355   0.069
-## 7 victoria  abs_exposu…  2814     0   664   2      0      16      16       2.96 
-## 8 victoria  rel_exposu…  2814     0     1   0.004  0       0.044   0.044   0.006
+## 1 Montreal  abs_exposu…  1658     0   832  25      4     102      98      37.1  
+## 2 Montreal  rel_exposu…  1658     0     1   0.134  0.014   0.492   0.478   0.199
+## 3 Saskatoon abs_exposu…   771     0  1067 259     91     489     398     274.   
+## 4 Saskatoon rel_exposu…   771     0     1   0.931  0.4     1       0.6     0.102
+## 5 Vancouver abs_exposu…  1520     0   891  13      1      71      70      19.3  
+## 6 Vancouver rel_exposu…  1520     0     1   0.047  0.003   0.358   0.355   0.069
+## 7 Victoria  abs_exposu…  2814     0  1142  31      7     114     107      46.0  
+## 8 Victoria  rel_exposu…  2814     0     1   0.092  0.018   0.337   0.319   0.136
 ## # … with 4 more variables: mean <dbl>, sd <dbl>, se <dbl>, ci <dbl>
 ```
+
+#### Daily Exposure SenseDoc
+
+
+```r
+exposure_sd$day_week <- wday(exposure_sd$date, label = TRUE)
+
+daily_exposure_rel <- ggplot(exposure_sd, aes(x = day_week, y = rel_exposure)) +
+                    geom_boxplot(outlier.shape = NA) +
+                    facet_wrap(~ city_id) + 
+                    xlab("Day of the Week") +
+                    ylab("Relative Exposure (%)") +
+                    theme_classic()
+plot(daily_exposure_rel)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-50-1.png)<!-- -->
+
+```r
+ggsave("daily_exposure_rel.jpg", dpi = 150, height = 4, width = 6)
+
+daily_exposure_abs <- ggplot(exposure_sd, aes(x = day_week, y = abs_exposure)) +
+                    geom_boxplot(outlier.shape = NA) +
+                    facet_wrap(~ city_id) + 
+                    xlab("Day of the Week") +
+                    ylab("Absolute Exposure (minutes)") +
+                    theme_classic()
+plot(daily_exposure_abs)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-50-2.png)<!-- -->
+
+```r
+ggsave("daily_exposure_abs.jpg", dpi = 150, height = 4, width = 6)
+```
+
+## Hourly Exposure SenseDoc
+
+
+```r
+exposure_sd_hour$hour_fct <- as.factor(exposure_sd_hour$hour)
+
+daily_exposure_tod_rel <- ggplot(exposure_sd_hour, aes(x = hour_fct, y = mean_rel_exposure)) +
+                    geom_boxplot() +
+                    facet_wrap(~ city_id) + 
+                    xlab("Hour of the Day") +
+                    ylab("Average Relative Exposure (%)") +
+                    theme_classic()
+plot(daily_exposure_tod_rel)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-51-1.png)<!-- -->
+
+```r
+daily_exposure_tod_abs <- ggplot(exposure_sd_hour, aes(x = hour_fct, y = mean_abs_exposure)) +
+                    geom_boxplot() +
+                    facet_wrap(~ city_id) + 
+                    xlab("Hour of the Day") +
+                    ylab("Average Asbolute Exposure (minutes)") +
+                    theme_classic()
+plot(daily_exposure_tod_abs)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-51-2.png)<!-- -->
 
 ### Ethica
 
@@ -4533,7 +4604,7 @@ table(ethica$exposed)
 ```
 ## 
 ##      0      1 
-## 736513 393500
+## 724512 405501
 ```
 
 ```r
@@ -4567,8 +4638,8 @@ exposure_ethica %>% group_by(city_id) %>%
 ## 4 saskatoon rel_exposure  1041     0     1  0.938  0.457   1       0.543   0.091
 ## 5 vancouver abs_exposure  1196     0   288  3      0      31      31       4.45 
 ## 6 vancouver rel_exposure  1196     0     1  0.025  0       0.441   0.441   0.037
-## 7 victoria  abs_exposure  1220     0   109  0      0       3       3       0    
-## 8 victoria  rel_exposure  1220     0     1  0      0       0.097   0.097   0    
+## 7 victoria  abs_exposure  1220     0   251  5      1      14      13       7.41 
+## 8 victoria  rel_exposure  1220     0     1  0.12   0.011   0.383   0.373   0.177
 ## # … with 4 more variables: mean <dbl>, sd <dbl>, se <dbl>, ci <dbl>
 ```
 
@@ -5116,7 +5187,7 @@ vic_basemap <- get_map(c(-123.5, 48.5),
 plot(vic_basemap)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-55-1.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-57-1.png)<!-- -->
 
 ```r
 vic_points <- ggmap(vic_basemap) + 
@@ -5131,7 +5202,7 @@ plot(vic_points)
 ## Warning: Removed 110 rows containing non-finite values (stat_bin2d).
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-55-2.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-57-2.png)<!-- -->
 
 ```r
 ggsave("vic_points.jpg", dpi = 150, height = 4, width = 6)
@@ -5162,7 +5233,7 @@ vic_basemap_zoom <- get_map(location = "Victoria, BC, Canada",
 plot(vic_basemap_zoom)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-55-3.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-57-3.png)<!-- -->
 
 ```r
 vic_points_zoom <- ggmap(vic_basemap_zoom) + 
@@ -5181,7 +5252,7 @@ plot(vic_points_zoom)
 ## Warning: Removed 10 rows containing missing values (geom_tile).
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-55-4.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-57-4.png)<!-- -->
 
 ```r
 ggsave("vic_points_zoom.jpg", dpi = 150, height = 4, width = 6)
@@ -5212,7 +5283,7 @@ van_basemap <- get_map(c(-122.9, 49.2),
 plot(van_basemap)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-56-1.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-58-1.png)<!-- -->
 
 ```r
 van_points <- ggmap(van_basemap) + 
@@ -5227,7 +5298,7 @@ plot(van_points)
 ## Warning: Removed 83 rows containing non-finite values (stat_bin2d).
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-56-2.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-58-2.png)<!-- -->
 
 ```r
 ggsave("van_points.jpg", dpi = 150, height = 4, width = 6)
@@ -5254,7 +5325,7 @@ van_basemap_zoom <- get_map(c(-123.15, 49.27),
 plot(van_basemap_zoom)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-56-3.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-58-3.png)<!-- -->
 
 ```r
 van_points_zoom <- ggmap(van_basemap_zoom) + 
@@ -5273,7 +5344,7 @@ plot(van_points_zoom)
 ## Warning: Removed 33 rows containing missing values (geom_tile).
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-56-4.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-58-4.png)<!-- -->
 
 ```r
 ggsave("van_points_zoom.jpg", dpi = 150, height = 4, width = 6)
@@ -5308,7 +5379,7 @@ sk_basemap <- get_map(location = "Saskatoon, Saskatchewan, Canada",
 plot(sk_basemap)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-57-1.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-59-1.png)<!-- -->
 
 ```r
 sk_points <- ggmap(sk_basemap) + 
@@ -5322,7 +5393,7 @@ plot(sk_points)
 ## Warning: Removed 324 rows containing non-finite values (stat_bin2d).
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-57-2.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-59-2.png)<!-- -->
 
 ```r
 ggsave("sk_points.jpg", dpi = 150, height = 4, width = 6)
@@ -5349,7 +5420,7 @@ sk_basemap_zoom <- get_map(c(-106.65, 52.14),
 plot(sk_basemap_zoom)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-57-3.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-59-3.png)<!-- -->
 
 ```r
 sk_points_zoom <- ggmap(sk_basemap_zoom) + 
@@ -5364,7 +5435,7 @@ plot(sk_points_zoom)
 ## Warning: Removed 4461 rows containing non-finite values (stat_bin2d).
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-57-4.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-59-4.png)<!-- -->
 
 ```r
 ggsave("sk_points_zoom.jpg", dpi = 150, height = 4, width = 6)
@@ -5397,7 +5468,7 @@ mtl_basemap <- get_map(location = "Montreal, Quebec, Canada",
 plot(mtl_basemap)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-58-1.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-60-1.png)<!-- -->
 
 ```r
 mtl_points <- ggmap(mtl_basemap) + 
@@ -5412,7 +5483,7 @@ plot(mtl_points)
 ## Warning: Removed 3053 rows containing non-finite values (stat_bin2d).
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-58-2.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-60-2.png)<!-- -->
 
 ```r
 ggsave("mtl_points.jpg", dpi = 150, height = 4, width = 6)
@@ -5439,7 +5510,7 @@ mtl_basemap_zoom <- get_map(c(-73.6, 45.5),
 plot(mtl_basemap_zoom)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-58-3.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-60-3.png)<!-- -->
 
 ```r
 mtl_points_zoom <- ggmap(mtl_basemap_zoom) + 
@@ -5458,7 +5529,7 @@ plot(mtl_points_zoom)
 ## Warning: Removed 56 rows containing missing values (geom_tile).
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-58-4.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-60-4.png)<!-- -->
 
 ```r
 ggsave("mtl_points_zoom.jpg", dpi = 150, height = 4, width = 6)
