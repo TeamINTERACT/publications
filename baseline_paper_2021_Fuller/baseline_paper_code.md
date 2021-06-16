@@ -21,18 +21,18 @@ library(tidyverse)
 ```
 
 ```
-## ── Attaching packages ──────────────────────────────────────────── tidyverse 1.3.0 ──
+## ── Attaching packages ─────────────────────────────────────── tidyverse 1.3.1 ──
 ```
 
 ```
-## ✓ ggplot2 3.3.2     ✓ purrr   0.3.4
-## ✓ tibble  3.0.3     ✓ dplyr   1.0.2
-## ✓ tidyr   1.1.2     ✓ stringr 1.4.0
-## ✓ readr   1.3.1     ✓ forcats 0.5.0
+## ✓ ggplot2 3.3.3     ✓ purrr   0.3.4
+## ✓ tibble  3.1.2     ✓ dplyr   1.0.6
+## ✓ tidyr   1.1.3     ✓ stringr 1.4.0
+## ✓ readr   1.4.0     ✓ forcats 0.5.1
 ```
 
 ```
-## ── Conflicts ─────────────────────────────────────────────── tidyverse_conflicts() ──
+## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
 ## x dplyr::filter() masks stats::filter()
 ## x dplyr::lag()    masks stats::lag()
 ```
@@ -72,7 +72,7 @@ library(sf)
 ```
 
 ```
-## Linking to GEOS 3.8.1, GDAL 3.1.1, PROJ 6.3.1
+## Linking to GEOS 3.8.1, GDAL 3.2.1, PROJ 7.2.1
 ```
 
 ```r
@@ -86,7 +86,7 @@ library(rgeos)
 ```
 ## rgeos version: 0.5-5, (SVN revision 640)
 ##  GEOS runtime version: 3.8.1-CAPI-1.13.3 
-##  Linking to sp version: 1.4-2 
+##  Linking to sp version: 1.4-5 
 ##  Polygon checking: TRUE
 ```
 
@@ -97,9 +97,9 @@ library(cancensus)
 ```
 ## Census data is currently stored temporarily.
 ## 
-##  In order to speed up performance, reduce API quota usage, and reduce unnecessary network calls, please set up a persistent cache directory by setting options(cancensus.cache_path = '<path to cancensus cache directory>')
+##  In order to speed up performance, reduce API quota usage, and reduce unnecessary network calls, please set up a persistent cache directory by setting the environment variable CM_CACHE_PATH= '<path to cancensus cache directory>' or  setting options(cancensus.cache_path = '<path to cancensus cache directory>')
 ## 
-##  You may add this option, together with your API key, to your .Rprofile.
+##  You may add this environment varianble to your .Renviron or add this option, together with your API key, to your .Rprofile.
 ```
 
 ```r
@@ -132,7 +132,21 @@ library(cowplot)
 ```r
 library(ggspatial)
 library(knitr)
+library(ggpubr)
+```
 
+```
+## 
+## Attaching package: 'ggpubr'
+```
+
+```
+## The following object is masked from 'package:cowplot':
+## 
+##     get_legend
+```
+
+```r
 setwd("/Users/dfuller/Dropbox/Projects/INTERACT_github/publications/baseline_paper_2021_Fuller")
 ```
 
@@ -206,13 +220,7 @@ age_table <- data %>%
                     na_count = sum(is.na(age)), 
                     count = n()
                   )
-```
 
-```
-## `summarise()` ungrouping output (override with `.groups` argument)
-```
-
-```r
 data$birth_date <- ymd(data$birth_date)
 data$birth_year <- year(data$birth_date)
 
@@ -420,7 +428,7 @@ age_census_table <- age_census %>%
 ```
 
 ```
-## `summarise()` regrouping output by 'GeoUID' (override with `.groups` argument)
+## `summarise()` has grouped output by 'GeoUID'. You can override using the `.groups` argument.
 ```
 
 ```r
@@ -580,7 +588,7 @@ income_census_table <- income_census %>%
 ```
 
 ```
-## `summarise()` regrouping output by 'GeoUID' (override with `.groups` argument)
+## `summarise()` has grouped output by 'GeoUID'. You can override using the `.groups` argument.
 ```
 
 ```r
@@ -1023,7 +1031,7 @@ education_census_table <- education_census %>%
 ```
 
 ```
-## `summarise()` regrouping output by 'GeoUID' (override with `.groups` argument)
+## `summarise()` has grouped output by 'GeoUID'. You can override using the `.groups` argument.
 ```
 
 ```r
@@ -1112,7 +1120,8 @@ vic2 <- read_csv("/Users/dfuller/Documents/INTERACT/data/health_2vic_main_1884ba
 ```
 
 ```
-## Parsed with column specification:
+## 
+## ── Column specification ────────────────────────────────────────────────────────
 ## cols(
 ##   .default = col_double(),
 ##   city_id = col_character(),
@@ -1132,10 +1141,7 @@ vic2 <- read_csv("/Users/dfuller/Documents/INTERACT/data/health_2vic_main_1884ba
 ##   group_id = col_character(),
 ##   employment_txt = col_character()
 ## )
-```
-
-```
-## See spec(...) for full column specifications.
+## ℹ Use `spec()` for the full column specifications.
 ```
 
 ```r
@@ -1143,7 +1149,8 @@ vic2_new <- read_csv("/Users/dfuller/Documents/INTERACT/data/health_2vicnew_main
 ```
 
 ```
-## Parsed with column specification:
+## 
+## ── Column specification ────────────────────────────────────────────────────────
 ## cols(
 ##   .default = col_double(),
 ##   city_id = col_character(),
@@ -1163,7 +1170,7 @@ vic2_new <- read_csv("/Users/dfuller/Documents/INTERACT/data/health_2vicnew_main
 ##   group_id = col_character(),
 ##   employment_txt = col_character()
 ## )
-## See spec(...) for full column specifications.
+## ℹ Use `spec()` for the full column specifications.
 ```
 
 ```r
@@ -1431,7 +1438,7 @@ ethnicity_census_table <- ethnicity_census %>%
 ```
 
 ```
-## `summarise()` regrouping output by 'GeoUID' (override with `.groups` argument)
+## `summarise()` has grouped output by 'GeoUID'. You can override using the `.groups` argument.
 ```
 
 ```r
@@ -1655,13 +1662,7 @@ pwb_wellbeing_table <- data %>%
                     na_count = sum(is.na(pwb_wellbeing)), 
                     count = n()
                   )
-```
 
-```
-## `summarise()` ungrouping output (override with `.groups` argument)
-```
-
-```r
 pwb_wellbeing_table
 ```
 
@@ -1707,13 +1708,7 @@ pwb_wellbeing_table_vic <- data %>%
                     na_count = sum(is.na(pwb_vic_wellbeing)), 
                     count = n()
                   )
-```
 
-```
-## `summarise()` ungrouping output (override with `.groups` argument)
-```
-
-```r
 pwb_wellbeing_table_vic
 ```
 
@@ -1760,13 +1755,7 @@ gwb_happiness_table <- data %>%
                     na_count = sum(is.na(gwb_happiness)), 
                     count = n()
                   )
-```
 
-```
-## `summarise()` ungrouping output (override with `.groups` argument)
-```
-
-```r
 gwb_happiness_table
 ```
 
@@ -1777,7 +1766,7 @@ gwb_happiness_table
 ## 1 Montréal        5.31    1.21         0  1155
 ## 2 Saskatoon       4.85    1.22         0   316
 ## 3 Vancouver       5.35    1.22         0   334
-## 4 Victoria        5.40    0.993      114   281
+## 4 Victoria        5.4     0.993      114   281
 ```
 
 # Social Connectedness
@@ -1858,13 +1847,6 @@ belonging_table <- data %>%
                     na_count = sum(is.na(belonging)), 
                     count = n()
                   )
-```
-
-```
-## `summarise()` ungrouping output (override with `.groups` argument)
-```
-
-```r
 belonging_table
 ```
 
@@ -1917,13 +1899,6 @@ soc_cohesion_table <- data %>%
                     na_count = sum(is.na(spat_soc_cohesion)), 
                     count = n()
                   )
-```
-
-```
-## `summarise()` ungrouping output (override with `.groups` argument)
-```
-
-```r
 soc_cohesion_table
 ```
 
@@ -1936,6 +1911,14 @@ soc_cohesion_table
 ## 3 Vancouver              3.56           0.787        0   334
 ## 4 Victoria               3.72           0.629      114   281
 ```
+
+### Writing a csv of the clean(ish) data
+
+
+```r
+write_csv(data, "/Users/dfuller/Documents/INTERACT/data/health_clean.csv")
+```
+
 
 # Physical Activity
 
@@ -1958,7 +1941,7 @@ table(sd_data$city)
 ```
 ## 
 ##  montreal saskatoon vancouver  victoria 
-##   1196346    608068   1116693   1163567
+##   1196346    608068   1116693   2090549
 ```
 
 ### Reading in the physical activity data from Ethica
@@ -2019,7 +2002,7 @@ table(sd_data$city_id)
 ```
 ## 
 ##  montreal saskatoon vancouver  victoria 
-##    547235    353822    547167    708729
+##    547235    353822    547167   1264068
 ```
 
 ```r
@@ -2064,7 +2047,7 @@ table(sd_data$activity_levels)
 ```
 ## 
 ##     light  moderate sedentary  vigorous 
-##    726847    139451   1278798     11857
+##    919194    173743   1603697     15658
 ```
 
 ```r
@@ -2074,7 +2057,7 @@ table(sd_data$wearing)
 ```
 ## 
 ##       1 
-## 2156953
+## 2712292
 ```
 
 ```r
@@ -2130,7 +2113,7 @@ sd_pa_table <- sd_data %>%
 ```
 
 ```
-## `summarise()` regrouping output by 'interact_id', 'date' (override with `.groups` argument)
+## `summarise()` has grouped output by 'interact_id', 'date'. You can override using the `.groups` argument.
 ```
 
 ```r
@@ -2138,21 +2121,21 @@ sd_pa_table
 ```
 
 ```
-## # A tibble: 5,540 x 13
-## # Groups:   interact_id, date [5,540]
-##    interact_id date       city_id  time wearing mean_mpva_sd sd_mpva_sd
-##          <int> <date>     <chr>   <dbl>   <dbl>        <dbl>      <dbl>
-##  1   101001706 2017-10-23 victor…    45       1            0          0
-##  2   101001706 2017-10-24 victor…   549       1            6          0
-##  3   101001706 2017-10-25 victor…   728       1           17          0
-##  4   101001706 2017-10-26 victor…   490       1            7          0
-##  5   101001706 2017-10-27 victor…   700       1           13          0
-##  6   101001706 2017-10-28 victor…   554       1           13          0
-##  7   101001706 2017-10-29 victor…   552       1           13          0
-##  8   101001706 2017-10-30 victor…   583       1           13          0
-##  9   101001706 2017-10-31 victor…   609       1           11          0
-## 10   101001706 2017-11-01 victor…    28       1            3          0
-## # … with 5,530 more rows, and 6 more variables: mean_sed_sd <dbl>,
+## # A tibble: 6,763 x 13
+## # Groups:   interact_id, date [6,763]
+##    interact_id date       city_id   time wearing mean_mpva_sd sd_mpva_sd
+##          <int> <date>     <chr>    <dbl>   <dbl>        <dbl>      <dbl>
+##  1   101001706 2017-10-23 victoria    45       1            0          0
+##  2   101001706 2017-10-24 victoria   549       1            6          0
+##  3   101001706 2017-10-25 victoria   728       1           17          0
+##  4   101001706 2017-10-26 victoria   490       1            7          0
+##  5   101001706 2017-10-27 victoria   700       1           13          0
+##  6   101001706 2017-10-28 victoria   554       1           13          0
+##  7   101001706 2017-10-29 victoria   552       1           13          0
+##  8   101001706 2017-10-30 victoria   583       1           13          0
+##  9   101001706 2017-10-31 victoria   609       1           11          0
+## 10   101001706 2017-11-01 victoria    28       1            3          0
+## # … with 6,753 more rows, and 6 more variables: mean_sed_sd <dbl>,
 ## #   sd_sed_sd <dbl>, mean_light_sd <dbl>, sd_light_sd <dbl>, na_count <int>,
 ## #   count <int>
 ```
@@ -2169,13 +2152,6 @@ sd_sum_table <- sd_pa_table %>%
                     na_count = sum(is.na(time)), 
                     count = n()
                   )
-```
-
-```
-## `summarise()` ungrouping output (override with `.groups` argument)
-```
-
-```r
 sd_sum_table
 ```
 
@@ -2186,7 +2162,7 @@ sd_sum_table
 ## 1 montreal   330.       1         24.1        199.          107.        0  1658
 ## 2 saskatoon  459.       1         20.7        301.          137.        0   771
 ## 3 vancouver  360.       1         32.5        207.          121.        0  1520
-## 4 victoria   445.       1         28.9        252.          164.        0  1591
+## 4 victoria   449.       1         29.9        258.          161.        0  2814
 ```
 
 ### SD Activity Figures by city
@@ -2225,7 +2201,7 @@ plot(saskatoon_activity)
 ## Warning: Removed 239 rows containing non-finite values (stat_smooth).
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-20-1.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
 
 ```r
 ggsave("saskatoon_activity.jpg", dpi = 150, height = 4, width = 6)
@@ -2280,7 +2256,7 @@ plot(montreal_activity)
 ## Warning: Removed 206 rows containing non-finite values (stat_smooth).
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-22-1.png)<!-- -->
 
 ```r
 ggsave("montreal_activity.jpg", dpi = 150, height = 4, width = 6)
@@ -2335,7 +2311,7 @@ plot(vancouver_activity)
 ## Warning: Removed 190 rows containing non-finite values (stat_smooth).
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-22-1.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-23-1.png)<!-- -->
 
 ```r
 ggsave("vancouver_activity.jpg", dpi = 150, height = 4, width = 6)
@@ -2378,7 +2354,7 @@ plot(victoria_activity)
 ```
 
 ```
-## Warning: Removed 48 rows containing non-finite values (stat_smooth).
+## Warning: Removed 69 rows containing non-finite values (stat_smooth).
 ```
 
 ```
@@ -2387,10 +2363,10 @@ plot(victoria_activity)
 ```
 
 ```
-## Warning: Removed 297 rows containing non-finite values (stat_smooth).
+## Warning: Removed 587 rows containing non-finite values (stat_smooth).
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-23-1.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-24-1.png)<!-- -->
 
 ```r
 ggsave("victoria_activity.jpg", dpi = 150, height = 4, width = 6)
@@ -2401,7 +2377,7 @@ ggsave("victoria_activity.jpg", dpi = 150, height = 4, width = 6)
 ```
 
 ```
-## Warning: Removed 48 rows containing non-finite values (stat_smooth).
+## Warning: Removed 69 rows containing non-finite values (stat_smooth).
 ```
 
 ```
@@ -2410,7 +2386,7 @@ ggsave("victoria_activity.jpg", dpi = 150, height = 4, width = 6)
 ```
 
 ```
-## Warning: Removed 297 rows containing non-finite values (stat_smooth).
+## Warning: Removed 587 rows containing non-finite values (stat_smooth).
 ```
 
 ### MPVA Minutes Ethica
@@ -2489,7 +2465,7 @@ ethica_pa_table <- ethica_data %>%
 ```
 
 ```
-## `summarise()` regrouping output by 'interact_id', 'date' (override with `.groups` argument)
+## `summarise()` has grouped output by 'interact_id', 'date'. You can override using the `.groups` argument.
 ```
 
 ```r
@@ -2499,18 +2475,18 @@ ethica_pa_table
 ```
 ## # A tibble: 8,172 x 13
 ## # Groups:   interact_id, date [8,172]
-##    interact_id date       city_id  time wearing mean_mvpa sd_mvpa mean_sed
-##          <int> <date>     <chr>   <dbl>   <dbl>     <dbl>   <dbl>    <dbl>
-##  1   101005415 2017-10-09 victor…   237       1        94       0      120
-##  2   101005415 2017-10-10 victor…    10       1         0       0       10
-##  3   101011680 2017-07-22 victor…    61       1        31       0       19
-##  4   101011680 2017-07-23 victor…    41       1         7       0       26
-##  5   101011680 2017-07-24 victor…    46       1         9       0       24
-##  6   101011680 2017-07-25 victor…    33       1         7       0       10
-##  7   101011680 2017-07-26 victor…    44       1         0       0       44
-##  8   101011680 2017-07-27 victor…    38       1         7       0        6
-##  9   101011680 2017-07-28 victor…    10       1         2       0        0
-## 10   101011680 2017-07-29 victor…    78       1        24       0       45
+##    interact_id date       city_id   time wearing mean_mvpa sd_mvpa mean_sed
+##          <int> <date>     <chr>    <dbl>   <dbl>     <dbl>   <dbl>    <dbl>
+##  1   101005415 2017-10-09 victoria   237       1        94       0      120
+##  2   101005415 2017-10-10 victoria    10       1         0       0       10
+##  3   101011680 2017-07-22 victoria    61       1        31       0       19
+##  4   101011680 2017-07-23 victoria    41       1         7       0       26
+##  5   101011680 2017-07-24 victoria    46       1         9       0       24
+##  6   101011680 2017-07-25 victoria    33       1         7       0       10
+##  7   101011680 2017-07-26 victoria    44       1         0       0       44
+##  8   101011680 2017-07-27 victoria    38       1         7       0        6
+##  9   101011680 2017-07-28 victoria    10       1         2       0        0
+## 10   101011680 2017-07-29 victoria    78       1        24       0       45
 ## # … with 8,162 more rows, and 5 more variables: sd_sed <dbl>, mean_light <dbl>,
 ## #   sd_light <dbl>, na_count <int>, count <int>
 ```
@@ -2527,13 +2503,6 @@ ethica_sum_table <- ethica_pa_table %>%
                     na_count = sum(is.na(time)), 
                     count = n()
                   )
-```
-
-```
-## `summarise()` ungrouping output (override with `.groups` argument)
-```
-
-```r
 ethica_sum_table
 ```
 
@@ -2555,7 +2524,8 @@ ethica_phone <- read_csv("/Users/dfuller/Documents/INTERACT/data/ethica_phone_de
 ```
 
 ```
-## Parsed with column specification:
+## 
+## ── Column specification ────────────────────────────────────────────────────────
 ## cols(
 ##   owner_id = col_double(),
 ##   device_id = col_character(),
@@ -2756,7 +2726,8 @@ veritas_hull <- read_csv("/Users/dfuller/Documents/INTERACT/veritas_gps/as_cvxhu
 ```
 
 ```
-## Parsed with column specification:
+## 
+## ── Column specification ────────────────────────────────────────────────────────
 ## cols(
 ##   interact_id = col_double(),
 ##   veritas_cvxhull_area = col_double(),
@@ -2825,10 +2796,6 @@ veritas_hul_city %>%
 ```
 
 ```
-## `summarise()` ungrouping output (override with `.groups` argument)
-```
-
-```
 ## # A tibble: 4 x 5
 ##   city_id   mean_veritas sd_vertis median_veritas iqr_veritas
 ##   <chr>            <dbl>     <dbl>          <dbl>       <dbl>
@@ -2848,7 +2815,7 @@ plot_v_hull <- ggplot(veritas_hul_city) +
 plot(plot_v_hull)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-27-1.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-28-1.png)<!-- -->
 
 ```r
 ggsave("plot_v_hull.jpg", dpi = 150, height = 4, width = 6)
@@ -2861,7 +2828,7 @@ plot_v_hull_gps <- ggplot(veritas_hul_city) +
 plot(plot_v_hull_gps)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-27-2.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-28-2.png)<!-- -->
 
 ```r
 ggsave("plot_v_hull_gps.jpg", dpi = 150, height = 4, width = 6)
@@ -2873,13 +2840,13 @@ glimpse(veritas_hul_city)
 ```
 ## Rows: 482
 ## Columns: 7
-## $ interact_id            <dbl> 302045191, 101668945, 401760345, 101474667, 10…
-## $ veritas_cvxhull_area   <dbl> 6200321.85857, 12978836.45161, 5403637.12146, …
-## $ gps_cvxhull_area       <dbl> 22296720.2877, 142554352.0767, 58422331.6081, …
-## $ intersect_cvxhull_area <dbl> 3024192.45655, 11167685.67864, 5403637.12386, …
-## $ city_id                <chr> "Saskatoon", "Victoria", "Montréal", "Victoria…
-## $ pct_gps                <dbl> 0.13563395950255, 0.07833984382766, 0.09249266…
-## $ pct_veritas            <dbl> 0.4877476565782, 0.8604535329709, 1.0000000004…
+## $ interact_id            <dbl> 302045191, 101668945, 401760345, 101474667, 101…
+## $ veritas_cvxhull_area   <dbl> 6200321.85857, 12978836.45161, 5403637.12146, 8…
+## $ gps_cvxhull_area       <dbl> 22296720.2877, 142554352.0767, 58422331.6081, 4…
+## $ intersect_cvxhull_area <dbl> 3024192.45655, 11167685.67864, 5403637.12386, 7…
+## $ city_id                <chr> "Saskatoon", "Victoria", "Montréal", "Victoria"…
+## $ pct_gps                <dbl> 0.13563395950255, 0.07833984382766, 0.092492664…
+## $ pct_veritas            <dbl> 0.4877476565782, 0.8604535329709, 1.00000000044…
 ```
 
 ```r
@@ -2887,7 +2854,8 @@ veritas_wearing <- read_csv("/Users/dfuller/Documents/INTERACT/veritas_gps/gps_v
 ```
 
 ```
-## Parsed with column specification:
+## 
+## ── Column specification ────────────────────────────────────────────────────────
 ## cols(
 ##   interact_id = col_double(),
 ##   nb_gps_fix_total = col_double(),
@@ -2936,10 +2904,10 @@ vic_int <- st_read("/Users/dfuller/Documents/INTERACT/data/intervention/victoria
 ```
 ## Reading layer `IBIMS_2017' from data source `/Users/dfuller/Documents/INTERACT/data/intervention/victoria/IBIMS_2017.shp' using driver `ESRI Shapefile'
 ## Simple feature collection with 2657 features and 9 fields
-## geometry type:  LINESTRING
-## dimension:      XY
-## bbox:           xmin: 467396.862 ymin: 5361697.2745 xmax: 478358.9694 ymax: 5377670.0528
-## projected CRS:  NAD83 / UTM zone 10N
+## Geometry type: LINESTRING
+## Dimension:     XY
+## Bounding box:  xmin: 467396.862 ymin: 5361697.2745 xmax: 478358.9694 ymax: 5377670.0528
+## Projected CRS: NAD83 / UTM zone 10N
 ```
 
 ```r
@@ -3009,8 +2977,8 @@ st_crs(vic_int_t)
 ##             ORDER[2],
 ##             ANGLEUNIT["degree",0.0174532925199433]],
 ##     USAGE[
-##         SCOPE["unknown"],
-##         AREA["World"],
+##         SCOPE["Horizontal component of 3D system."],
+##         AREA["World."],
 ##         BBOX[-90,-180,90,180]],
 ##     ID["EPSG",4326]]
 ```
@@ -3021,10 +2989,10 @@ vic_int_t
 
 ```
 ## Simple feature collection with 2657 features and 9 fields
-## geometry type:  LINESTRING
-## dimension:      XY
-## bbox:           xmin: -123.441753799 ymin: 48.4078745718 xmax: -123.29276167 ymax: 48.5512877001
-## geographic CRS: WGS 84
+## Geometry type: LINESTRING
+## Dimension:     XY
+## Bounding box:  xmin: -123.441753799 ymin: 48.4078745718 xmax: -123.29276167 ymax: 48.5512877001
+## Geodetic CRS:  WGS 84
 ## First 10 features:
 ##          Date            Facility Notes          Length        Length_km
 ## 1  2017-01-01     Off-Street Path  <NA>  12.33893564110 0.01233893564110
@@ -3068,10 +3036,75 @@ vic_int_plot <- ggplot() +
 plot(vic_int_plot)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-28-1.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-29-1.png)<!-- -->
 
 ```r
 ggsave("vic_int_plot.jpg", dpi = 150, height = 4, width = 6)
+```
+
+#### Victoria Exposure
+
+Using exposure of 250meters because people may deviate between 160 to 288 meters on to separated cycling infrastructure for specific trips. (https://doi.org/10.1016/j.tra.2012.07.005)
+
+
+```r
+vic_int_t_1 <- filter(vic_int_t, AAA == "V")
+
+vic_int_t_1 <- st_combine(vic_int_t_1)
+vic_int_t_1 <- st_as_sf(vic_int_t_1)
+vic_int_t_1 <- st_transform(vic_int_t_1, 26910)
+
+vic_int_t_250 = st_buffer(vic_int_t_1$x, dist = 250) # According to stack exchangers the distance is in meters
+
+vic_int_t_250 <- st_transform(vic_int_t_250, 4326)
+vic_int_t_250 <- st_as_sf(vic_int_t_250)
+
+plot(vic_int_t_250)
+```
+
+![](baseline_paper_code_files/figure-html/victoria exposure prep-1.png)<!-- -->
+
+
+```r
+### SenseDoc
+vic_sd_sf <- st_as_sf(vic_sd, coords = c("lon", "lat"), crs = 4326)
+
+vic_sd_sf$exposed <- ifelse(sf::st_intersects(vic_sd_sf, vic_int_t_250, sparse = FALSE), 1, 0)
+```
+
+```
+## although coordinates are longitude/latitude, st_intersects assumes that they are planar
+## although coordinates are longitude/latitude, st_intersects assumes that they are planar
+```
+
+```r
+table(vic_sd_sf$exposed)
+```
+
+```
+## 
+##       0       1 
+## 1192781   71287
+```
+
+```r
+vic_sd$exposed <- as.factor(vic_sd_sf$exposed)
+
+exposure_vic_sd <- ggplot() + 
+        geom_point(aes(x = lon, y = lat, colour = exposed), data = vic_sd, alpha = 0.2) +
+        geom_sf(data = vic_int_t_250, alpha = 0.01) +
+        annotation_scale() + 
+        scale_color_manual(labels = c("Not Exposed", "Exposed"),
+                     values = c("grey80", "red")) +
+        labs(color = "Exposure") + 
+        theme_map()
+plot(exposure_vic_sd)
+```
+
+![](baseline_paper_code_files/figure-html/victoria sensedoc exposure-1.png)<!-- -->
+
+```r
+ggsave("exposure_vic_sd.jpg", dpi = 150, height = 4, width = 6)
 ```
 
 ### Vancouver
@@ -3096,10 +3129,10 @@ van_int <- st_read("/Users/dfuller/Documents/INTERACT/data/intervention/vancouve
 ```
 ## Reading layer `greenways' from data source `/Users/dfuller/Documents/INTERACT/data/intervention/vancouver/greenways.shp' using driver `ESRI Shapefile'
 ## Simple feature collection with 23 features and 1 field
-## geometry type:  MULTILINESTRING
-## dimension:      XY
-## bbox:           xmin: -123.223763798 ymin: 49.2003046203 xmax: -123.023328099 ymax: 49.3140387464
-## geographic CRS: WGS 84
+## Geometry type: MULTILINESTRING
+## Dimension:     XY
+## Bounding box:  xmin: -123.223763798 ymin: 49.2003046203 xmax: -123.023328099 ymax: 49.3140387464
+## Geodetic CRS:  WGS 84
 ```
 
 ```r
@@ -3165,7 +3198,7 @@ van_int$arbutus <- as.factor(van_int$arbutus)
 ggplot() + geom_sf(data = van_int, aes(colour = arbutus))
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-29-1.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-30-1.png)<!-- -->
 
 ```r
 van_int_plot <- ggplot() + 
@@ -3182,10 +3215,71 @@ van_int_plot <- ggplot() +
 plot(van_int_plot)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-29-2.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-30-2.png)<!-- -->
 
 ```r
 ggsave("van_int_plot.jpg", dpi = 150, height = 4, width = 6)
+```
+
+#### Vancouver Exposure
+
+
+```r
+van_int_a <- filter(van_int, arbutus == 1)
+
+van_int_a <- st_combine(van_int_a)
+van_int_a <- st_as_sf(van_int_a)
+van_int_a <- st_transform(van_int_a, 26910)
+
+van_int_1_250 = st_buffer(van_int_a$x, dist = 250) # According to stack exchangers the distance is in meters
+
+van_int_1_250 <- st_transform(van_int_1_250, 4326)
+van_int_1_250 <- st_as_sf(van_int_1_250)
+
+plot(van_int_1_250)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-31-1.png)<!-- -->
+
+```r
+van_sd_sf <- st_as_sf(van_sd, coords = c("lon", "lat"), crs = 4326)
+
+van_sd_sf$exposed <- ifelse(sf::st_intersects(van_sd_sf, van_int_1_250, sparse = FALSE), 1, 0)
+```
+
+```
+## although coordinates are longitude/latitude, st_intersects assumes that they are planar
+## although coordinates are longitude/latitude, st_intersects assumes that they are planar
+```
+
+```r
+table(van_sd_sf$exposed)
+```
+
+```
+## 
+##      0      1 
+## 425984 121183
+```
+
+```r
+van_sd$exposed <- as.factor(van_sd_sf$exposed)
+
+exposure_van_sd <- ggplot() + 
+        geom_point(aes(x = lon, y = lat, colour = exposed), data = van_sd, alpha = 0.2) +
+        annotation_scale() + 
+        geom_sf(data = van_int_1_250, alpha=0.01) +
+        scale_color_manual(labels = c("Not Exposed", "Exposed"),
+                     values = c("grey80", "red")) +
+        labs(color = "Exposure") + 
+        theme_map()
+plot(exposure_van_sd)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-31-2.png)<!-- -->
+
+```r
+ggsave("exposure_van_sd.jpg", dpi = 150, height = 4, width = 6)
 ```
 
 ### Saskatoon
@@ -3193,11 +3287,21 @@ ggsave("van_int_plot.jpg", dpi = 150, height = 4, width = 6)
 
 ```r
 sk_cma <- get_census(dataset='CA16', regions=list(CMA="47725"),
-                          level='CMA', use_cache = TRUE, geo_format = "sf")
+                          level='CMA', use_cache = FALSE, geo_format = "sf")
 ```
 
 ```
-## Reading geo data from local cache.
+## Querying CensusMapper API...
+```
+
+```
+## 
+Downloading: 1.9 kB     
+Downloading: 1.9 kB     
+Downloading: 1.9 kB     
+Downloading: 1.9 kB     
+Downloading: 1.9 kB     
+Downloading: 1.9 kB
 ```
 
 ```r
@@ -3210,10 +3314,10 @@ sk_int <- st_read("/Users/dfuller/Documents/INTERACT/data/intervention/saskatoon
 ```
 ## Reading layer `BRT_lines' from data source `/Users/dfuller/Documents/INTERACT/data/intervention/saskatoon/BRT_lines.shp' using driver `ESRI Shapefile'
 ## Simple feature collection with 6 features and 18 fields
-## geometry type:  LINESTRING
-## dimension:      XY
-## bbox:           xmin: -106.76398 ymin: 52.08557 xmax: -106.56585 ymax: 52.170589
-## geographic CRS: WGS 84
+## Geometry type: LINESTRING
+## Dimension:     XY
+## Bounding box:  xmin: -106.76398 ymin: 52.08557 xmax: -106.56585 ymax: 52.170589
+## Geodetic CRS:  WGS 84
 ```
 
 ```r
@@ -3247,22 +3351,25 @@ st_crs(sk_int_t)
 
 ```
 ## Coordinate Reference System:
-##   User input: WGS 84 
+##   User input: +proj=longlat +ellps=WGS84 +datum=WGS84 
 ##   wkt:
-## GEOGCRS["WGS 84",
+## GEOGCRS["unknown",
 ##     DATUM["World Geodetic System 1984",
 ##         ELLIPSOID["WGS 84",6378137,298.257223563,
-##             LENGTHUNIT["metre",1]]],
+##             LENGTHUNIT["metre",1]],
+##         ID["EPSG",6326]],
 ##     PRIMEM["Greenwich",0,
-##         ANGLEUNIT["degree",0.0174532925199433]],
+##         ANGLEUNIT["degree",0.0174532925199433],
+##         ID["EPSG",8901]],
 ##     CS[ellipsoidal,2],
-##         AXIS["latitude",north,
-##             ORDER[1],
-##             ANGLEUNIT["degree",0.0174532925199433]],
 ##         AXIS["longitude",east,
+##             ORDER[1],
+##             ANGLEUNIT["degree",0.0174532925199433,
+##                 ID["EPSG",9122]]],
+##         AXIS["latitude",north,
 ##             ORDER[2],
-##             ANGLEUNIT["degree",0.0174532925199433]],
-##     ID["EPSG",4326]]
+##             ANGLEUNIT["degree",0.0174532925199433,
+##                 ID["EPSG",9122]]]]
 ```
 
 ```r
@@ -3271,10 +3378,10 @@ sk_int_t
 
 ```
 ## Simple feature collection with 6 features and 18 fields
-## geometry type:  LINESTRING
-## dimension:      XY
-## bbox:           xmin: -106.76398 ymin: 52.08557 xmax: -106.56585 ymax: 52.170589
-## geographic CRS: WGS 84
+## Geometry type: LINESTRING
+## Dimension:     XY
+## Bounding box:  xmin: -106.76398 ymin: 52.08557 xmax: -106.56585 ymax: 52.170589
+## CRS:           +proj=longlat +ellps=WGS84 +datum=WGS84
 ##                 full_name    dir_id dir_name pattern line_id    line_name
 ## 1   2 BRT, Blue - inbound 102281940  inbound       A 62c0cd2  2 BRT, Blue
 ## 2  2 BRT, Blue - outbound 102281941 outbound       A 62c0cd2  2 BRT, Blue
@@ -3313,12 +3420,6 @@ sk_int_t
 ```
 
 ```r
-ggplot() + geom_sf(data = sk_int_t, aes(colour = line_name))
-```
-
-![](baseline_paper_code_files/figure-html/unnamed-chunk-30-1.png)<!-- -->
-
-```r
 sk_int_plot <- ggplot() + 
                   geom_sf(data = sk_cma) +
                   geom_hex(aes(x = lon, y = lat), binwidth = c(0.005, 0.005), data = sk_sd, alpha = 0.8) +
@@ -3333,10 +3434,71 @@ sk_int_plot <- ggplot() +
 plot(sk_int_plot)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-30-2.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-32-1.png)<!-- -->
 
 ```r
 ggsave("sk_int_plot.jpg", dpi = 200, height = 4, width = 6)
+```
+
+#### Saskatoon Exposure
+
+
+```r
+sk_int_1 <- st_combine(sk_int)
+sk_int_1 <- st_as_sf(sk_int_1)
+sk_int_1 <- st_transform(sk_int_1, 26910)
+
+sk_int_1 = st_buffer(sk_int_1$x, dist = 800) 
+
+sk_int_1 <- st_transform(sk_int_1, 4326)
+sk_int_1 <- st_as_sf(sk_int_1)
+
+plot(sk_int_1)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-33-1.png)<!-- -->
+
+```r
+sk_sd_sf <- st_as_sf(sk_sd, coords = c("lon", "lat"), crs = 4326)
+
+sk_sd_sf$exposed <- ifelse(sf::st_intersects(sk_sd_sf, sk_int_1, sparse = FALSE), 1, 0)
+```
+
+```
+## although coordinates are longitude/latitude, st_intersects assumes that they are planar
+## although coordinates are longitude/latitude, st_intersects assumes that they are planar
+```
+
+```r
+table(sk_sd_sf$exposed)
+```
+
+```
+## 
+##      0      1 
+## 119634 234188
+```
+
+```r
+sk_sd$exposed <- as.factor(sk_sd_sf$exposed)
+
+sk_sd <- filter(sk_sd, in_city == 1)
+
+exposure_sk_sd <- ggplot() + 
+        geom_point(aes(x = lon, y = lat, colour = exposed), data = sk_sd, alpha = 0.2) +
+        geom_sf(data = sk_int_1, alpha=0.01) +
+        annotation_scale() + 
+        scale_color_manual(labels = c("Not Exposed", "Exposed"),
+                     values = c("grey80", "red")) +
+        labs(color = "Exposure") + 
+        theme_map()
+plot(exposure_sk_sd)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-33-2.png)<!-- -->
+
+```r
+ggsave("exposure_sk_sd.jpg", dpi = 150, height = 4, width = 6)
 ```
 
 ### Montreal
@@ -3355,17 +3517,17 @@ mtl_cma <- get_census(dataset='CA16', regions=list(CMA="47725"),
 mtl_sd <- sd_data %>% filter(city_id == "montreal" & in_city == 1) 
 sd_mtl_days <- as.data.frame(unique(mtl_sd$date))
 
-mtl_cyc <- st_read("/Users/dfuller/Documents/INTERACT/data/intervention/montreal/pistes-cyclables.shp")
+mtl_cyc <- st_read("/Users/dfuller/Documents/INTERACT/data/intervention/montreal/rev_hypothetical.shp")
 ```
 
 ```
-## Reading layer `pistes-cyclables' from data source `/Users/dfuller/Documents/INTERACT/data/intervention/montreal/pistes-cyclables.shp' using driver `ESRI Shapefile'
-## Simple feature collection with 6395 features and 11 fields
-## geometry type:  MULTILINESTRING
-## dimension:      XYZ
-## bbox:           xmin: 267983.718702 ymin: 5029290.98966 xmax: 306349.241757 ymax: 5062582.3718
-## z_range:        zmin: 0 zmax: 0
-## projected CRS:  NAD83 / MTM zone 8
+## Reading layer `rev_hypothetical' from data source `/Users/dfuller/Documents/INTERACT/data/intervention/montreal/rev_hypothetical.shp' using driver `ESRI Shapefile'
+## Simple feature collection with 19 features and 2 fields
+## Geometry type: LINESTRING
+## Dimension:     XYZ
+## Bounding box:  xmin: -73.9263594 ymin: 45.4219273 xmax: -73.4840407 ymax: 45.6982956
+## z_range:       zmin: 0 zmax: 0
+## Geodetic CRS:  WGS 84
 ```
 
 ```r
@@ -3375,10 +3537,10 @@ mtl_pet <- st_read("/Users/dfuller/Documents/INTERACT/data/intervention/montreal
 ```
 ## Reading layer `rues-pietonnes' from data source `/Users/dfuller/Documents/INTERACT/data/intervention/montreal/rues-pietonnes.shp' using driver `ESRI Shapefile'
 ## Simple feature collection with 53 features and 28 fields
-## geometry type:  POINT
-## dimension:      XY
-## bbox:           xmin: 289308.512492 ymin: 5035340.4034 xmax: 305648.324656 ymax: 5055539.05136
-## projected CRS:  NAD83 / MTM zone 8
+## Geometry type: POINT
+## Dimension:     XY
+## Bounding box:  xmin: 289308.512492 ymin: 5035340.4034 xmax: 305648.324656 ymax: 5055539.05136
+## Projected CRS: NAD83 / MTM zone 8
 ```
 
 ```r
@@ -3387,46 +3549,22 @@ st_crs(mtl_cyc)
 
 ```
 ## Coordinate Reference System:
-##   User input: NAD83 / MTM zone 8 
+##   User input: WGS 84 
 ##   wkt:
-## PROJCRS["NAD83 / MTM zone 8",
-##     BASEGEOGCRS["NAD83",
-##         DATUM["North American Datum 1983",
-##             ELLIPSOID["GRS 1980",6378137,298.257222101,
-##                 LENGTHUNIT["metre",1]]],
-##         PRIMEM["Greenwich",0,
-##             ANGLEUNIT["degree",0.0174532925199433]],
-##         ID["EPSG",4269]],
-##     CONVERSION["MTM zone 8",
-##         METHOD["Transverse Mercator",
-##             ID["EPSG",9807]],
-##         PARAMETER["Latitude of natural origin",0,
-##             ANGLEUNIT["degree",0.0174532925199433],
-##             ID["EPSG",8801]],
-##         PARAMETER["Longitude of natural origin",-73.5,
-##             ANGLEUNIT["degree",0.0174532925199433],
-##             ID["EPSG",8802]],
-##         PARAMETER["Scale factor at natural origin",0.9999,
-##             SCALEUNIT["unity",1],
-##             ID["EPSG",8805]],
-##         PARAMETER["False easting",304800,
-##             LENGTHUNIT["metre",1],
-##             ID["EPSG",8806]],
-##         PARAMETER["False northing",0,
-##             LENGTHUNIT["metre",1],
-##             ID["EPSG",8807]]],
-##     CS[Cartesian,2],
-##         AXIS["easting (E(X))",east,
+## GEOGCRS["WGS 84",
+##     DATUM["World Geodetic System 1984",
+##         ELLIPSOID["WGS 84",6378137,298.257223563,
+##             LENGTHUNIT["metre",1]]],
+##     PRIMEM["Greenwich",0,
+##         ANGLEUNIT["degree",0.0174532925199433]],
+##     CS[ellipsoidal,2],
+##         AXIS["latitude",north,
 ##             ORDER[1],
-##             LENGTHUNIT["metre",1]],
-##         AXIS["northing (N(Y))",north,
+##             ANGLEUNIT["degree",0.0174532925199433]],
+##         AXIS["longitude",east,
 ##             ORDER[2],
-##             LENGTHUNIT["metre",1]],
-##     USAGE[
-##         SCOPE["unknown"],
-##         AREA["Canada - Quebec and Ontario - 75°W to 72°W"],
-##         BBOX[44.98,-75,62.53,-72]],
-##     ID["EPSG",32188]]
+##             ANGLEUNIT["degree",0.0174532925199433]],
+##     ID["EPSG",4326]]
 ```
 
 ```r
@@ -3471,8 +3609,8 @@ st_crs(mtl_pet)
 ##             ORDER[2],
 ##             LENGTHUNIT["metre",1]],
 ##     USAGE[
-##         SCOPE["unknown"],
-##         AREA["Canada - Quebec and Ontario - 75°W to 72°W"],
+##         SCOPE["Engineering survey, topographic mapping."],
+##         AREA["Canada - Quebec between 75°W and 72°W.; Canada - Ontario - east of 75°W."],
 ##         BBOX[44.98,-75,62.53,-72]],
 ##     ID["EPSG",32188]]
 ```
@@ -3483,14 +3621,14 @@ mtl_cyc <- st_transform(mtl_cyc, "+proj=longlat +ellps=WGS84 +datum=WGS84")
 ggplot() + geom_sf(data = mtl_cyc)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-31-1.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-34-1.png)<!-- -->
 
 ```r
 mtl_int_plot <- ggplot() + 
                   geom_sf(data = mtl_cma) +
                   geom_hex(aes(x = lon, y = lat), binwidth = c(0.009, 0.009), data = mtl_sd, alpha = 0.8) +
                   scale_fill_gradient2(name="Count of GPS points", low="lightblue", high = "darkblue") +
-                  geom_sf(data = mtl_cyc, aes(colour = Ville_MTL), alpha = 0.5) +
+                  geom_sf(data = mtl_cyc, alpha = 0.5) +
                   geom_point(aes(x = LONGITUDE, y = LATITUDE), data = mtl_pet, alpha = 0.7, colour = "darkgreen", size = 1) +
                   coord_sf(
                       xlim = sf::st_bbox(mtl_cyc)[c(1,3)],
@@ -3500,10 +3638,85 @@ mtl_int_plot <- ggplot() +
 plot(mtl_int_plot)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-31-2.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-34-2.png)<!-- -->
 
 ```r
 ggsave("mtl_int_plot.jpg", dpi = 150, height = 4, width = 6)
+```
+
+#### Montreal Exposure
+
+
+```r
+mtl_cyc_1 <- st_combine(mtl_cyc)
+mtl_cyc_1 <- st_as_sf(mtl_cyc_1)
+mtl_cyc_1 <- st_transform(mtl_cyc_1, 26910)
+
+mtl_cyc_1 = st_buffer(mtl_cyc_1$x, dist = 250) 
+
+mtl_cyc_1 <- st_transform(mtl_cyc_1, 4326)
+mtl_cyc_1 <- st_as_sf(mtl_cyc_1)
+
+plot(mtl_cyc_1)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-35-1.png)<!-- -->
+
+```r
+mtl_sd_sf <- st_as_sf(mtl_sd, coords = c("lon", "lat"), crs = 4326)
+
+mtl_sd_sf$exposed <- ifelse(sf::st_intersects(mtl_sd_sf, mtl_cyc_1, sparse = FALSE), 1, 0)
+```
+
+```
+## although coordinates are longitude/latitude, st_intersects assumes that they are planar
+## although coordinates are longitude/latitude, st_intersects assumes that they are planar
+```
+
+```r
+table(mtl_sd_sf$exposed)
+```
+
+```
+## 
+##      0      1 
+## 395344 151891
+```
+
+```r
+mtl_sd$exposed <- as.factor(mtl_sd_sf$exposed)
+
+exposure_mtl_sd <- ggplot() + 
+        geom_point(aes(x = lon, y = lat, colour = exposed), data = mtl_sd, alpha = 0.2) +
+        geom_sf(data = mtl_cyc_1, alpha=0.01) +    
+        annotation_scale() + 
+        scale_color_manual(labels = c("Not Exposed", "Exposed"),
+                     values = c("grey80", "red")) +
+        labs(color = "Exposure") + 
+        theme_map()
+plot(exposure_mtl_sd)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-35-2.png)<!-- -->
+
+```r
+ggsave("exposure_mtl_sd.jpg", dpi = 150, height = 4, width = 6)
+```
+
+### Combining SenseDoc Exposure plots
+
+
+```r
+exposure_figure_sd <- ggarrange(exposure_vic_sd, exposure_van_sd, exposure_sk_sd, exposure_mtl_sd,
+                    labels = c("Victoria", "Vancouver", "Saskatoon", "Montreal"),
+                    ncol = 2, nrow = 2)
+plot(exposure_figure_sd)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-36-1.png)<!-- -->
+
+```r
+ggsave("exposure_figure_sd.jpg", dpi = 150, height = 4, width = 6)
 ```
 
 # Interventions Ethica Data
@@ -3529,7 +3742,7 @@ vic_int_plot_eth <- ggplot() +
 plot(vic_int_plot_eth)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-32-1.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-37-1.png)<!-- -->
 
 ```r
 ggsave("vic_int_plot_eth.jpg", dpi = 150, height = 4, width = 6)
@@ -3555,7 +3768,7 @@ van_int_plot_eth <- ggplot() +
 plot(van_int_plot_eth)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-33-1.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-38-1.png)<!-- -->
 
 ```r
 ggsave("van_int_plot_eth.jpg", dpi = 150, height = 4, width = 6)
@@ -3581,7 +3794,7 @@ sk_int_plot_eth <- ggplot() +
 plot(sk_int_plot_eth)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-34-1.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-39-1.png)<!-- -->
 
 ```r
 ggsave("sk_int_plot_eth.jpg", dpi = 200, height = 4, width = 6)
@@ -3597,7 +3810,7 @@ mtl_int_plot_eth <- ggplot() +
                   geom_sf(data = mtl_cma) +
                   geom_hex(aes(x = lon, y = lat), binwidth = c(0.009, 0.009), data = ethica_mtl, alpha = 0.8) +
                   scale_fill_gradient2(name="Count of GPS points", low="lightblue", high = "darkblue") +
-                  geom_sf(data = mtl_cyc, aes(colour = Ville_MTL), alpha = 0.5) +
+                  geom_sf(data = mtl_cyc, alpha = 0.5) +
                   geom_point(aes(x = LONGITUDE, y = LATITUDE), data = mtl_pet, alpha = 0.7, colour = "darkgreen", size = 1) +
                   coord_sf(
                       xlim = sf::st_bbox(mtl_cyc)[c(1,3)],
@@ -3607,391 +3820,17 @@ mtl_int_plot_eth <- ggplot() +
 plot(mtl_int_plot_eth)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-35-1.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-40-1.png)<!-- -->
 
 ```r
 ggsave("mtl_int_plot_eth.jpg", dpi = 150, height = 4, width = 6)
 ```
 
 
-# GPS Maps
+# Sensedoc and Ethica Comparisons per day
 
 ### Victoria
 
-
-```r
-### Full View
-vic_basemap <- get_map(c(-123.5, 48.5),
-                     source = "google",
-                     maptype = "roadmap", crop = FALSE,
-                     zoom = 10)
-```
-
-```
-## Source : https://maps.googleapis.com/maps/api/staticmap?center=48.5,-123.5&zoom=10&size=640x640&scale=2&maptype=roadmap&language=en-EN&key=xxx-9rGQuKs
-```
-
-```r
-plot(vic_basemap)
-```
-
-![](baseline_paper_code_files/figure-html/unnamed-chunk-36-1.png)<!-- -->
-
-```r
-vic_points <- ggmap(vic_basemap) + 
-                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.015, 0.015), data = vic_sd, alpha = 1) +
-                  scale_fill_gradient2(low="darkred", high = "darkblue") +
-                  theme_map()
-
-plot(vic_points)
-```
-
-```
-## Warning: Removed 50 rows containing non-finite values (stat_bin2d).
-```
-
-![](baseline_paper_code_files/figure-html/unnamed-chunk-36-2.png)<!-- -->
-
-```r
-ggsave("vic_points.jpg", dpi = 150, height = 4, width = 6)
-```
-
-```
-## Warning: Removed 50 rows containing non-finite values (stat_bin2d).
-```
-
-```r
-### Zoom 
-
-vic_basemap_zoom <- get_map(location = "Victoria, BC, Canada",
-                     source = "google",
-                     maptype = "roadmap", crop = FALSE,
-                     zoom = 13)
-```
-
-```
-## Source : https://maps.googleapis.com/maps/api/staticmap?center=Victoria,%20BC,%20Canada&zoom=13&size=640x640&scale=2&maptype=roadmap&language=en-EN&key=xxx-9rGQuKs
-```
-
-```
-## Source : https://maps.googleapis.com/maps/api/geocode/json?address=Victoria,+BC,+Canada&key=xxx-9rGQuKs
-```
-
-```r
-plot(vic_basemap_zoom)
-```
-
-![](baseline_paper_code_files/figure-html/unnamed-chunk-36-3.png)<!-- -->
-
-```r
-vic_points_zoom <- ggmap(vic_basemap_zoom) + 
-                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.0025, 0.0025), data = vic_sd, alpha = 0.8) +
-                  scale_fill_gradient2(high = "darkblue") +
-                  theme_map()
-
-plot(vic_points_zoom)
-```
-
-```
-## Warning: Removed 178695 rows containing non-finite values (stat_bin2d).
-```
-
-```
-## Warning: Removed 6 rows containing missing values (geom_tile).
-```
-
-![](baseline_paper_code_files/figure-html/unnamed-chunk-36-4.png)<!-- -->
-
-```r
-ggsave("vic_points_zoom.jpg", dpi = 150, height = 4, width = 6)
-```
-
-```
-## Warning: Removed 178695 rows containing non-finite values (stat_bin2d).
-
-## Warning: Removed 6 rows containing missing values (geom_tile).
-```
-
-### Vancouver
-
-
-```r
-### Full View
-van_basemap <- get_map(c(-122.9, 49.2),
-                     source = "google",
-                     maptype = "roadmap", crop = FALSE,
-                     zoom = 10)
-```
-
-```
-## Source : https://maps.googleapis.com/maps/api/staticmap?center=49.2,-122.9&zoom=10&size=640x640&scale=2&maptype=roadmap&language=en-EN&key=xxx-9rGQuKs
-```
-
-```r
-plot(van_basemap)
-```
-
-![](baseline_paper_code_files/figure-html/unnamed-chunk-37-1.png)<!-- -->
-
-```r
-van_points <- ggmap(van_basemap) + 
-                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.015, 0.015), data = van_sd, alpha = 1) +
-                  scale_fill_gradient2(low="darkred", high = "darkblue") + 
-                  theme_map()
-
-plot(van_points)
-```
-
-```
-## Warning: Removed 83 rows containing non-finite values (stat_bin2d).
-```
-
-![](baseline_paper_code_files/figure-html/unnamed-chunk-37-2.png)<!-- -->
-
-```r
-ggsave("van_points.jpg", dpi = 150, height = 4, width = 6)
-```
-
-```
-## Warning: Removed 83 rows containing non-finite values (stat_bin2d).
-```
-
-```r
-### Zoom 
-
-van_basemap_zoom <- get_map(c(-123.15, 49.27),
-                     source = "google",
-                     maptype = "roadmap", crop = FALSE,
-                     zoom = 13)
-```
-
-```
-## Source : https://maps.googleapis.com/maps/api/staticmap?center=49.27,-123.15&zoom=13&size=640x640&scale=2&maptype=roadmap&language=en-EN&key=xxx-9rGQuKs
-```
-
-```r
-plot(van_basemap_zoom)
-```
-
-![](baseline_paper_code_files/figure-html/unnamed-chunk-37-3.png)<!-- -->
-
-```r
-van_points_zoom <- ggmap(van_basemap_zoom) + 
-                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.003, 0.003), data = van_sd, alpha = 0.8) +
-                  scale_fill_gradient2(high = "darkblue") + 
-                  theme_map()
-
-plot(van_points_zoom)
-```
-
-```
-## Warning: Removed 183724 rows containing non-finite values (stat_bin2d).
-```
-
-```
-## Warning: Removed 33 rows containing missing values (geom_tile).
-```
-
-![](baseline_paper_code_files/figure-html/unnamed-chunk-37-4.png)<!-- -->
-
-```r
-ggsave("van_points_zoom.jpg", dpi = 150, height = 4, width = 6)
-```
-
-```
-## Warning: Removed 183724 rows containing non-finite values (stat_bin2d).
-
-## Warning: Removed 33 rows containing missing values (geom_tile).
-```
-
-### Saskatoon
-
-
-```r
-### Full View
-sk_basemap <- get_map(location = "Saskatoon, Saskatchewan, Canada",
-                     source = "google",
-                     maptype = "roadmap", crop = FALSE,
-                     zoom = 10)
-```
-
-```
-## Source : https://maps.googleapis.com/maps/api/staticmap?center=Saskatoon,%20Saskatchewan,%20Canada&zoom=10&size=640x640&scale=2&maptype=roadmap&language=en-EN&key=xxx-9rGQuKs
-```
-
-```
-## Source : https://maps.googleapis.com/maps/api/geocode/json?address=Saskatoon,+Saskatchewan,+Canada&key=xxx-9rGQuKs
-```
-
-```r
-plot(sk_basemap)
-```
-
-![](baseline_paper_code_files/figure-html/unnamed-chunk-38-1.png)<!-- -->
-
-```r
-sk_points <- ggmap(sk_basemap) + 
-                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.015, 0.015), data = sk_sd, alpha = 1) +
-                  scale_fill_gradient2(low="darkred", high = "darkblue") + 
-                  theme_map()
-plot(sk_points)
-```
-
-```
-## Warning: Removed 324 rows containing non-finite values (stat_bin2d).
-```
-
-![](baseline_paper_code_files/figure-html/unnamed-chunk-38-2.png)<!-- -->
-
-```r
-ggsave("sk_points.jpg", dpi = 150, height = 4, width = 6)
-```
-
-```
-## Warning: Removed 324 rows containing non-finite values (stat_bin2d).
-```
-
-```r
-### Zoom 
-
-sk_basemap_zoom <- get_map(c(-106.65, 52.14),
-                     source = "google",
-                     maptype = "roadmap", crop = FALSE,
-                     zoom = 12)
-```
-
-```
-## Source : https://maps.googleapis.com/maps/api/staticmap?center=52.14,-106.65&zoom=12&size=640x640&scale=2&maptype=roadmap&language=en-EN&key=xxx-9rGQuKs
-```
-
-```r
-plot(sk_basemap_zoom)
-```
-
-![](baseline_paper_code_files/figure-html/unnamed-chunk-38-3.png)<!-- -->
-
-```r
-sk_points_zoom <- ggmap(sk_basemap_zoom) + 
-                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.004, 0.004), data = sk_sd, alpha = 0.8) +
-                  scale_fill_gradient2(high = "darkblue") + 
-                  theme_map()
-
-plot(sk_points_zoom)
-```
-
-```
-## Warning: Removed 4461 rows containing non-finite values (stat_bin2d).
-```
-
-![](baseline_paper_code_files/figure-html/unnamed-chunk-38-4.png)<!-- -->
-
-```r
-ggsave("sk_points_zoom.jpg", dpi = 150, height = 4, width = 6)
-```
-
-```
-## Warning: Removed 4461 rows containing non-finite values (stat_bin2d).
-```
-
-### Montreal
-
-
-```r
-### Full View
-mtl_basemap <- get_map(location = "Montreal, Quebec, Canada",
-                     source = "google",
-                     maptype = "roadmap", crop = FALSE,
-                     zoom = 10)
-```
-
-```
-## Source : https://maps.googleapis.com/maps/api/staticmap?center=Montreal,%20Quebec,%20Canada&zoom=10&size=640x640&scale=2&maptype=roadmap&language=en-EN&key=xxx-9rGQuKs
-```
-
-```
-## Source : https://maps.googleapis.com/maps/api/geocode/json?address=Montreal,+Quebec,+Canada&key=xxx-9rGQuKs
-```
-
-```r
-plot(mtl_basemap)
-```
-
-![](baseline_paper_code_files/figure-html/unnamed-chunk-39-1.png)<!-- -->
-
-```r
-mtl_points <- ggmap(mtl_basemap) + 
-                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.015, 0.015), data = mtl_sd, alpha = 1) +
-                  scale_fill_gradient2(low="darkred", high = "darkblue") + 
-                  theme_map()
-
-plot(mtl_points)
-```
-
-```
-## Warning: Removed 3053 rows containing non-finite values (stat_bin2d).
-```
-
-![](baseline_paper_code_files/figure-html/unnamed-chunk-39-2.png)<!-- -->
-
-```r
-ggsave("mtl_points.jpg", dpi = 150, height = 4, width = 6)
-```
-
-```
-## Warning: Removed 3053 rows containing non-finite values (stat_bin2d).
-```
-
-```r
-### Zoom 
-
-mtl_basemap_zoom <- get_map(c(-73.6, 45.5),
-                     source = "google",
-                     maptype = "roadmap", crop = FALSE,
-                     zoom = 12)
-```
-
-```
-## Source : https://maps.googleapis.com/maps/api/staticmap?center=45.5,-73.6&zoom=12&size=640x640&scale=2&maptype=roadmap&language=en-EN&key=xxx-9rGQuKs
-```
-
-```r
-plot(mtl_basemap_zoom)
-```
-
-![](baseline_paper_code_files/figure-html/unnamed-chunk-39-3.png)<!-- -->
-
-```r
-mtl_points_zoom <- ggmap(mtl_basemap_zoom) + 
-                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.004, 0.004), data = mtl_sd, alpha = 0.8) +
-                  scale_fill_gradient2(high = "darkblue") + 
-                  theme_map()
-
-plot(mtl_points_zoom)
-```
-
-```
-## Warning: Removed 172088 rows containing non-finite values (stat_bin2d).
-```
-
-```
-## Warning: Removed 56 rows containing missing values (geom_tile).
-```
-
-![](baseline_paper_code_files/figure-html/unnamed-chunk-39-4.png)<!-- -->
-
-```r
-ggsave("mtl_points_zoom.jpg", dpi = 150, height = 4, width = 6)
-```
-
-```
-## Warning: Removed 172088 rows containing non-finite values (stat_bin2d).
-
-## Warning: Removed 56 rows containing missing values (geom_tile).
-```
-
-## Sensedoc and Ethica Comparisons per day
-
-### Victoria
 
 ```r
 ### Victoria
@@ -4025,7 +3864,7 @@ table(vic_eth_sd$interact_id)  ### 40 participants
 ```
 
 ```r
-vic_eth_101493098 <- vic_eth_sd %>% filter(interact_id == "101493098" & date.x != "2017-07-27")
+vic_eth_date_1 <- vic_eth_sd %>% filter(date.x == "2017-07-27")
 
 ### Victoria 
 vic_da <- get_census(dataset='CA16', regions=list(CMA="59935"),
@@ -4049,62 +3888,61 @@ ethica_vic.jpg <- ggplot() +
 plot(ethica_vic.jpg)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-40-1.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-41-1.png)<!-- -->
 
 ```r
 ggsave("ethica_vic.jpg", dpi = 150, height = 4, width = 6)
 
-### Victoria 101493098
-vic_101493098_sd <- ggplot() + 
+### Victoria SENSEDOC
+vic_sd_hex <- ggplot() + 
                   #geom_sf(data = vic_da, alpha = 0.5, colour = "grey50") +
-                  geom_hex(aes(x = lon.x, y = lat.x), data = vic_eth_101493098, binwidth = c(0.009, 0.009)) +
+                  geom_hex(aes(x = lon, y = lat), data = vic_sd, binwidth = c(0.003, 0.003)) +
                   coord_sf(
                       xlim = sf::st_bbox(vic_int_t)[c(1,3)],
                       ylim = sf::st_bbox(vic_int_t)[c(2,4)]) +
                   #annotation_scale() + 
-                  scale_fill_gradient(name="Count of GPS points") +
-                  facet_wrap(~ date.x) +
+                  scale_fill_gradient(name="Count of GPS points", low = "grey90", high = "red", na.value = "white") + 
+                  #facet_wrap(~ date) +
                   labs(x = "Longitude", y = "Latitude") +
                   theme_minimal() + 
                   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
                   scale_y_continuous(breaks=seq(48.44,48.54)) +
                   scale_x_continuous(breaks=c(123.44, -123.30))
 
-plot(vic_101493098_sd)
+plot(vic_sd_hex)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-40-2.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-41-2.png)<!-- -->
 
 ```r
-ggsave("vic_101493098_sd.jpg", dpi = 150, height = 4, width = 6)
+ggsave("vic_sd_hex.jpg", dpi = 150, height = 4, width = 6)
 
-vic_101493098_eth <- ggplot() + 
+vic_ethica_hex <- ggplot() + 
                   #geom_sf(data = vic_da, alpha = 0.5, colour = "grey50") +
-                  geom_hex(aes(x = lon.y, y = lat.y), data = vic_eth_101493098, binwidth = c(0.009, 0.009)) +
+                  geom_hex(aes(x = lon, y = lat), data = vic_ethica, binwidth = c(0.003, 0.003)) +
                   coord_sf(
                       xlim = sf::st_bbox(vic_int_t)[c(1,3)],
                       ylim = sf::st_bbox(vic_int_t)[c(2,4)]) +
                   #annotation_scale() + 
-                  scale_fill_gradient(name="Count of GPS points") +
-                  facet_wrap(~ date.x) +
+                  scale_fill_gradient(name="Count of GPS points", low = "grey90", high = "red", na.value = "white") +
+                  #facet_wrap(~ date) +
                   labs(x = "Longitude", y = "Latitude") +
                   theme_minimal() + 
                   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
                   scale_y_continuous(breaks=seq(48.44,48.54)) +
                   scale_x_continuous(breaks=c(123.44, -123.30))
                
-plot(vic_101493098_eth)
+plot(vic_ethica_hex)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-40-3.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-41-3.png)<!-- -->
 
 ```r
-ggsave("vic_101493098_ethica.jpg", dpi = 150, height = 4, width = 6)
+ggsave("vic_ethica_hex.jpg", dpi = 150, height = 4, width = 6)
 ```
 
-## Sensedoc and Ethica Comparisons per day
-
 ### Vancouver
+
 
 ```r
 ### Vancouver
@@ -4160,13 +3998,58 @@ ethica_van <- ggplot() +
 plot(ethica_van)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-41-1.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-42-1.png)<!-- -->
 
 ```r
 ggsave("ethica_van.jpg", dpi = 150, height = 4, width = 6)
+
+### Victoria SENSEDOC
+van_sd_hex <- ggplot() + 
+                  #geom_sf(data = vic_da, alpha = 0.5, colour = "grey50") +
+                  geom_hex(aes(x = lon, y = lat), data = van_sd, binwidth = c(0.002, 0.002)) +
+                  coord_sf(
+                      xlim = sf::st_bbox(van_int)[c(1,3)],
+                      ylim = sf::st_bbox(van_int)[c(2,4)]) +
+                  #annotation_scale() + 
+                  scale_fill_gradient(name="Count of GPS points", low = "grey90", high = "red", na.value = "white") + 
+                  #facet_wrap(~ date) +
+                  labs(x = "Longitude", y = "Latitude") +
+                  theme_minimal() + 
+                  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+                  scale_y_continuous(breaks=seq(48.44,48.54)) +
+                  scale_x_continuous(breaks=c(123.44, -123.30))
+
+plot(van_sd_hex)
 ```
 
-## Sensedoc and Ethica Comparisons per day
+![](baseline_paper_code_files/figure-html/unnamed-chunk-42-2.png)<!-- -->
+
+```r
+ggsave("van_sd_hex.jpg", dpi = 150, height = 4, width = 6)
+
+van_eth_hex <- ggplot() + 
+                  #geom_sf(data = vic_da, alpha = 0.5, colour = "grey50") +
+                  geom_hex(aes(x = lon, y = lat), data = van_ethica, binwidth = c(0.002, 0.002)) +
+                  coord_sf(
+                      xlim = sf::st_bbox(van_int)[c(1,3)],
+                      ylim = sf::st_bbox(van_int)[c(2,4)]) +
+                  #annotation_scale() + 
+                  scale_fill_gradient(name="Count of GPS points", low = "grey90", high = "red", na.value = "white") +
+                  #facet_wrap(~ date) +
+                  labs(x = "Longitude", y = "Latitude") +
+                  theme_minimal() + 
+                  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+                  scale_y_continuous(breaks=seq(48.44,48.54)) +
+                  scale_x_continuous(breaks=c(123.44, -123.30))
+               
+plot(van_eth_hex)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-42-3.png)<!-- -->
+
+```r
+ggsave("van_eth_hex.jpg", dpi = 150, height = 4, width = 6)
+```
 
 ### Saskatoon
 
@@ -4225,13 +4108,60 @@ ethica_sk <- ggplot() +
 plot(ethica_sk)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-42-1.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-43-1.png)<!-- -->
 
 ```r
 ggsave("ethica_sk.jpg", dpi = 150, height = 4, width = 6)
+
+### Saskatoon SENSEDOC
+sk_sd_hex <- ggplot() + 
+                  #geom_sf(data = vic_da, alpha = 0.5, colour = "grey50") +
+                  geom_hex(aes(x = lon, y = lat), data = sk_sd, binwidth = c(0.002, 0.002)) +
+                  coord_sf(
+                      xlim = sf::st_bbox(sk_int_t)[c(1,3)],
+                      ylim = sf::st_bbox(sk_int_t)[c(2,4)]) +
+                  #annotation_scale() + 
+                  scale_fill_gradient(name="Count of GPS points", low = "grey90", high = "red", na.value = "white") + 
+                  #facet_wrap(~ date) +
+                  labs(x = "Longitude", y = "Latitude") +
+                  theme_minimal() + 
+                  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+                  scale_y_continuous(breaks=seq(48.44,48.54)) +
+                  scale_x_continuous(breaks=c(123.44, -123.30))
+
+plot(sk_sd_hex)
 ```
 
-## Sensedoc and Ethica Comparisons per day
+![](baseline_paper_code_files/figure-html/unnamed-chunk-43-2.png)<!-- -->
+
+```r
+ggsave("sk_sd_hex.jpg", dpi = 150, height = 4, width = 6)
+
+### Saskatoon Ethica
+
+sk_eth_hex <- ggplot() + 
+                  #geom_sf(data = vic_da, alpha = 0.5, colour = "grey50") +
+                  geom_hex(aes(x = lon, y = lat), data = sk_eth, binwidth = c(0.002, 0.002)) +
+                  coord_sf(
+                      xlim = sf::st_bbox(sk_int_t)[c(1,3)],
+                      ylim = sf::st_bbox(sk_int_t)[c(2,4)]) +
+                  #annotation_scale() + 
+                  scale_fill_gradient(name="Count of GPS points", low = "grey90", high = "red", na.value = "white") +
+                  #facet_wrap(~ date) +
+                  labs(x = "Longitude", y = "Latitude") +
+                  theme_minimal() + 
+                  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+                  scale_y_continuous(breaks=seq(48.44,48.54)) +
+                  scale_x_continuous(breaks=c(123.44, -123.30))
+               
+plot(sk_eth_hex)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-43-3.png)<!-- -->
+
+```r
+ggsave("sk_eth_hex.jpg", dpi = 150, height = 4, width = 6)
+```
 
 ### Montreal
 
@@ -4290,10 +4220,356 @@ ethica_mtl <- ggplot() +
 plot(ethica_mtl)
 ```
 
-![](baseline_paper_code_files/figure-html/unnamed-chunk-43-1.png)<!-- -->
+![](baseline_paper_code_files/figure-html/unnamed-chunk-44-1.png)<!-- -->
 
 ```r
 ggsave("ethica_mtl.jpg", dpi = 150, height = 4, width = 6)
+
+### Montreal SENSEDOC
+mtl_sd_hex <- ggplot() + 
+                  #geom_sf(data = mtl_da, alpha = 0.1, colour = "white") +
+                  geom_hex(aes(x = lon, y = lat), data = mtl_sd, binwidth = c(0.004, 0.004)) +
+                  coord_sf(
+                      xlim = sf::st_bbox(mtl_cyc)[c(1,3)],
+                      ylim = sf::st_bbox(mtl_cyc)[c(2,4)]) +
+                  #annotation_scale() + 
+                  scale_fill_gradient(name="Count of GPS points", low = "grey90", high = "red", na.value = "white") + 
+                  #facet_wrap(~ date) +
+                  labs(x = "Longitude", y = "Latitude") +
+                  theme_minimal() + 
+                  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+                  scale_y_continuous(breaks=seq(48.44,48.54)) +
+                  scale_x_continuous(breaks=c(123.44, -123.30))
+
+plot(mtl_sd_hex)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-44-2.png)<!-- -->
+
+```r
+ggsave("mtl_sd_hex.jpg", dpi = 150, height = 4, width = 6)
+
+### Montreal ETHICA
+
+mtl_eth_hex <- ggplot() + 
+                  #geom_sf(data = vic_da, alpha = 0.5, colour = "grey50") +
+                  geom_hex(aes(x = lon, y = lat), data = mtl_eth, binwidth = c(0.004, 0.004)) +
+                  coord_sf(
+                      xlim = sf::st_bbox(mtl_cyc)[c(1,3)],
+                      ylim = sf::st_bbox(mtl_cyc)[c(2,4)]) +
+                  #annotation_scale() + 
+                  scale_fill_gradient(name="Count of GPS points", low = "grey90", high = "red", na.value = "white") +
+                  #facet_wrap(~ date) +
+                  labs(x = "Longitude", y = "Latitude") +
+                  theme_minimal() + 
+                  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+                  scale_y_continuous(breaks=seq(48.44,48.54)) +
+                  scale_x_continuous(breaks=c(123.44, -123.30))
+               
+plot(mtl_eth_hex)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-44-3.png)<!-- -->
+
+```r
+ggsave("mtl_eth_hex.jpg", dpi = 150, height = 4, width = 6)
+```
+
+# Ethica Exposures
+
+#### Victoria Ethica Exposure
+
+
+```r
+vic_eth_sf <- st_as_sf(vic_eth, coords = c("lon", "lat"), crs = 4326)
+
+vic_eth_sf$exposed <- ifelse(sf::st_intersects(vic_eth_sf, vic_int_t_250, sparse = FALSE), 1, 0)
+```
+
+```
+## although coordinates are longitude/latitude, st_intersects assumes that they are planar
+## although coordinates are longitude/latitude, st_intersects assumes that they are planar
+```
+
+```r
+table(vic_eth_sf$exposed)
+```
+
+```
+## 
+##     0     1 
+## 90819  6523
+```
+
+```r
+vic_eth$exposed <- as.factor(vic_eth_sf$exposed)
+
+exposure_vic_eth <- ggplot() + 
+        geom_point(aes(x = lon, y = lat, colour = exposed), data = vic_eth, alpha = 0.2) +
+        annotation_scale() + 
+        geom_sf(data = van_int_1_250, alpha=0.01) +
+        scale_color_manual(labels = c("Not Exposed", "Exposed"),
+                     values = c("grey80", "red")) +
+        labs(color = "Exposure") + 
+        theme_map()
+plot(exposure_vic_eth)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-45-1.png)<!-- -->
+
+```r
+ggsave("exposure_vic_eth.jpg", dpi = 150, height = 4, width = 6)
+```
+
+#### Vancouver Ethica Exposure
+
+
+```r
+van_eth_sf <- st_as_sf(van_eth, coords = c("lon", "lat"), crs = 4326)
+
+van_eth_sf$exposed <- ifelse(sf::st_intersects(van_eth_sf, van_int_1_250, sparse = FALSE), 1, 0)
+```
+
+```
+## although coordinates are longitude/latitude, st_intersects assumes that they are planar
+## although coordinates are longitude/latitude, st_intersects assumes that they are planar
+```
+
+```r
+table(van_eth_sf$exposed)
+```
+
+```
+## 
+##      0      1 
+## 128003  41874
+```
+
+```r
+van_eth$exposed <- as.factor(van_eth_sf$exposed)
+
+exposure_van_eth <- ggplot() +         
+        geom_sf(data = van_int_1_250, alpha=0.01) +
+        geom_point(aes(x = lon, y = lat, colour = exposed), data = van_eth, alpha = 0.2) +
+        annotation_scale() + 
+        scale_color_manual(labels = c("Not Exposed", "Exposed"),
+                     values = c("grey80", "red")) +
+        labs(color = "Exposure") + 
+        theme_map()
+plot(exposure_van_eth)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-46-1.png)<!-- -->
+
+```r
+ggsave("exposure_van_eth.jpg", dpi = 150, height = 4, width = 6)
+```
+
+#### Saskatoon Ethica Exposure
+
+
+```r
+sk_eth_sf <- st_as_sf(sk_eth, coords = c("lon", "lat"), crs = 4326)
+
+sk_eth_sf$exposed <- ifelse(sf::st_intersects(sk_eth_sf, sk_int_1, sparse = FALSE), 1, 0)
+```
+
+```
+## although coordinates are longitude/latitude, st_intersects assumes that they are planar
+## although coordinates are longitude/latitude, st_intersects assumes that they are planar
+```
+
+```r
+table(sk_eth_sf$exposed)
+```
+
+```
+## 
+##      0      1 
+##  61305 166305
+```
+
+```r
+sk_eth$exposed <- as.factor(sk_eth_sf$exposed)
+
+exposure_sk_eth <- ggplot() + 
+        geom_point(aes(x = lon, y = lat, colour = exposed), data = sk_eth, alpha = 0.2) +
+        geom_sf(data = sk_int_1, alpha=0.01) +
+        annotation_scale() + 
+        scale_color_manual(labels = c("Not Exposed", "Exposed"),
+                     values = c("grey80", "red")) +
+        labs(color = "Exposure") + 
+        theme_map()
+plot(exposure_sk_eth)
+```
+
+![](baseline_paper_code_files/figure-html/saskatoon ethica exposure-1.png)<!-- -->
+
+```r
+ggsave("exposure_sk_eth.jpg", dpi = 150, height = 4, width = 6)
+```
+
+
+#### Montreal Ethica Exposure
+
+
+```r
+mtl_eth_sf <- st_as_sf(mtl_eth, coords = c("lon", "lat"), crs = 4326)
+
+mtl_eth_sf$exposed <- ifelse(sf::st_intersects(mtl_eth_sf, mtl_cyc_1, sparse = FALSE), 1, 0)
+```
+
+```
+## although coordinates are longitude/latitude, st_intersects assumes that they are planar
+## although coordinates are longitude/latitude, st_intersects assumes that they are planar
+```
+
+```r
+table(mtl_eth_sf$exposed)
+```
+
+```
+## 
+##      0      1 
+## 456386 178798
+```
+
+```r
+mtl_eth$exposed <- as.factor(mtl_eth_sf$exposed)
+
+exposure_mtl_eth <- ggplot() + 
+        geom_point(aes(x = lon, y = lat, colour = exposed), data = mtl_eth, alpha = 0.2) +
+        geom_sf(data = mtl_cyc_1, alpha=0.01) +    
+        annotation_scale() + 
+        scale_color_manual(labels = c("Not Exposed", "Exposed"),
+                     values = c("grey80", "red")) +
+        labs(color = "Exposure") + 
+        theme_map()
+plot(exposure_mtl_eth)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-47-1.png)<!-- -->
+
+```r
+ggsave("exposure_mtl_eth.jpg", dpi = 150, height = 4, width = 6)
+```
+
+### Combining SenseDoc Exposure plots
+
+
+```r
+exposure_figure_eth <- ggarrange(exposure_vic_eth, exposure_van_eth, exposure_sk_eth, exposure_mtl_eth,
+                    labels = c("Victoria", "Vancouver", "Saskatoon", "Montreal"),
+                    ncol = 2, nrow = 2)
+plot(exposure_figure_eth)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-48-1.png)<!-- -->
+
+```r
+ggsave("exposure_figure_eth.jpg", dpi = 150, height = 4, width = 6)
+```
+
+# Exposure Measures Sensdoc/Ethica Abosulte and Relative
+
+### Sensedoc
+
+
+```r
+sd <- rbind(vic_sd, van_sd, sk_sd, mtl_sd)
+table(sd$exposed)
+```
+
+```
+## 
+##       0       1 
+## 2133743  578549
+```
+
+```r
+sd$exposed <- as.numeric(as.character(sd$exposed))
+
+exposure_sd <- sd %>%
+                  group_by(interact_id, city_id, date) %>%
+                    summarise(
+                      tot_minutes = first(minutes_id_date_city),
+                      abs_exposure = sum(exposed), 
+                      rel_exposure = abs_exposure/tot_minutes
+                    )
+```
+
+```
+## `summarise()` has grouped output by 'interact_id', 'city_id'. You can override using the `.groups` argument.
+```
+
+```r
+exposure_sd %>% group_by(city_id) %>%
+                  get_summary_stats(abs_exposure, rel_exposure)
+```
+
+```
+## # A tibble: 8 x 14
+##   city_id   variable        n   min   max  median     q1      q3     iqr     mad
+##   <chr>     <chr>       <dbl> <dbl> <dbl>   <dbl>  <dbl>   <dbl>   <dbl>   <dbl>
+## 1 montreal  abs_exposu…  1658     0   832  25      4     102      98      37.1  
+## 2 montreal  rel_exposu…  1658     0     1   0.134  0.014   0.492   0.478   0.199
+## 3 saskatoon abs_exposu…   771     0  1067 259     91     489     398     274.   
+## 4 saskatoon rel_exposu…   771     0     1   0.931  0.4     1       0.6     0.102
+## 5 vancouver abs_exposu…  1520     0   891  13      1      71      70      19.3  
+## 6 vancouver rel_exposu…  1520     0     1   0.047  0.003   0.358   0.355   0.069
+## 7 victoria  abs_exposu…  2814     0   664   2      0      16      16       2.96 
+## 8 victoria  rel_exposu…  2814     0     1   0.004  0       0.044   0.044   0.006
+## # … with 4 more variables: mean <dbl>, sd <dbl>, se <dbl>, ci <dbl>
+```
+
+### Ethica
+
+
+```r
+ethica <- rbind(vic_eth, van_eth, sk_eth, mtl_eth)
+table(ethica$exposed)
+```
+
+```
+## 
+##      0      1 
+## 736513 393500
+```
+
+```r
+ethica$exposed <- as.numeric(as.character(ethica$exposed))
+
+exposure_ethica <- ethica %>%
+                  group_by(interact_id, city_id, date) %>%
+                    summarise(
+                      tot_minutes = first(minutes_id_date_city),
+                      abs_exposure = sum(exposed), 
+                      rel_exposure = abs_exposure/tot_minutes
+                    )
+```
+
+```
+## `summarise()` has grouped output by 'interact_id', 'city_id'. You can override using the `.groups` argument.
+```
+
+```r
+exposure_ethica %>% group_by(city_id) %>%
+                  get_summary_stats(abs_exposure, rel_exposure)
+```
+
+```
+## # A tibble: 8 x 14
+##   city_id   variable         n   min   max median     q1      q3     iqr     mad
+##   <chr>     <chr>        <dbl> <dbl> <dbl>  <dbl>  <dbl>   <dbl>   <dbl>   <dbl>
+## 1 montreal  abs_exposure  4715     0   288  9      0      47      47      13.3  
+## 2 montreal  rel_exposure  4715     0     1  0.091  0       0.536   0.536   0.135
+## 3 saskatoon abs_exposure  1041     0   576 96     42     234     192     110.   
+## 4 saskatoon rel_exposure  1041     0     1  0.938  0.457   1       0.543   0.091
+## 5 vancouver abs_exposure  1196     0   288  3      0      31      31       4.45 
+## 6 vancouver rel_exposure  1196     0     1  0.025  0       0.441   0.441   0.037
+## 7 victoria  abs_exposure  1220     0   109  0      0       3       3       0    
+## 8 victoria  rel_exposure  1220     0     1  0      0       0.097   0.097   0    
+## # … with 4 more variables: mean <dbl>, sd <dbl>, se <dbl>, ci <dbl>
 ```
 
 # Participant Data Flow
@@ -4307,7 +4583,8 @@ veritas_vic <- read_csv("/Users/dfuller/Documents/INTERACT/data/veritas/veritas_
 ```
 
 ```
-## Parsed with column specification:
+## 
+## ── Column specification ────────────────────────────────────────────────────────
 ## cols(
 ##   .default = col_double(),
 ##   city_id = col_character(),
@@ -4318,10 +4595,7 @@ veritas_vic <- read_csv("/Users/dfuller/Documents/INTERACT/data/veritas/veritas_
 ##   home_address_pc = col_character(),
 ##   home_move_date = col_date(format = "")
 ## )
-```
-
-```
-## See spec(...) for full column specifications.
+## ℹ Use `spec()` for the full column specifications.
 ```
 
 ```r
@@ -4368,13 +4642,7 @@ vic_sd_small <- vic_sd %>%
                     interact_id = first(interact_id),
                     sensedoc = 1, 
                   )
-```
 
-```
-## `summarise()` ungrouping output (override with `.groups` argument)
-```
-
-```r
 flow_vic <- left_join(flow_vic, vic_sd_small)
 ```
 
@@ -4389,7 +4657,7 @@ table(flow_vic$sensedoc)  ### Number of SenseDoc Participants
 ```
 ## 
 ##   1 
-## 153
+## 160
 ```
 
 ```r
@@ -4402,13 +4670,7 @@ vic_ethica_small <- ethica_data %>%
                     interact_id = first(interact_id),
                     ethica = 1, 
                   )
-```
 
-```
-## `summarise()` ungrouping output (override with `.groups` argument)
-```
-
-```r
 flow_vic <- left_join(flow_vic, vic_ethica_small)
 ```
 
@@ -4440,7 +4702,7 @@ table(flow_vic$sensedoc, flow_vic$sd_ethica) ### Number of Ethica and SenseDoc P
 ```
 ##    
 ##      2
-##   1 71
+##   1 76
 ```
 
 ## Vancouver
@@ -4452,7 +4714,8 @@ veritas_van <- read_csv("/Users/dfuller/Documents/INTERACT/data/veritas/veritas_
 ```
 
 ```
-## Parsed with column specification:
+## 
+## ── Column specification ────────────────────────────────────────────────────────
 ## cols(
 ##   .default = col_double(),
 ##   city_id = col_character(),
@@ -4463,10 +4726,7 @@ veritas_van <- read_csv("/Users/dfuller/Documents/INTERACT/data/veritas/veritas_
 ##   home_address_pc = col_character(),
 ##   home_move_date = col_date(format = "")
 ## )
-```
-
-```
-## See spec(...) for full column specifications.
+## ℹ Use `spec()` for the full column specifications.
 ```
 
 ```r
@@ -4511,13 +4771,7 @@ van_sd_small <- van_sd %>%
                     interact_id = first(interact_id),
                     sensedoc = 1, 
                   )
-```
 
-```
-## `summarise()` ungrouping output (override with `.groups` argument)
-```
-
-```r
 flow_van <- left_join(flow_van, van_sd_small)
 ```
 
@@ -4545,13 +4799,7 @@ van_ethica_small <- ethica_data %>%
                     interact_id = first(interact_id),
                     ethica = 1, 
                   )
-```
 
-```
-## `summarise()` ungrouping output (override with `.groups` argument)
-```
-
-```r
 flow_van <- left_join(flow_van, van_ethica_small)
 ```
 
@@ -4595,7 +4843,8 @@ veritas_sk <- read_csv("/Users/dfuller/Documents/INTERACT/data/veritas/veritas_1
 ```
 
 ```
-## Parsed with column specification:
+## 
+## ── Column specification ────────────────────────────────────────────────────────
 ## cols(
 ##   .default = col_double(),
 ##   city_id = col_character(),
@@ -4607,10 +4856,7 @@ veritas_sk <- read_csv("/Users/dfuller/Documents/INTERACT/data/veritas/veritas_1
 ##   home_address_pc = col_character(),
 ##   home_move_date = col_date(format = "")
 ## )
-```
-
-```
-## See spec(...) for full column specifications.
+## ℹ Use `spec()` for the full column specifications.
 ```
 
 ```r
@@ -4655,13 +4901,7 @@ sk_sd_small <- sk_sd %>%
                     interact_id = first(interact_id),
                     sensedoc = 1, 
                   )
-```
 
-```
-## `summarise()` ungrouping output (override with `.groups` argument)
-```
-
-```r
 flow_sk <- left_join(flow_sk, sk_sd_small)
 ```
 
@@ -4689,13 +4929,7 @@ sk_ethica_small <- ethica_data %>%
                     interact_id = first(interact_id),
                     ethica = 1, 
                   )
-```
 
-```
-## `summarise()` ungrouping output (override with `.groups` argument)
-```
-
-```r
 flow_sk <- left_join(flow_sk, sk_ethica_small)
 ```
 
@@ -4739,7 +4973,8 @@ veritas_mtl <- read_csv("/Users/dfuller/Documents/INTERACT/data/veritas/veritas_
 ```
 
 ```
-## Parsed with column specification:
+## 
+## ── Column specification ────────────────────────────────────────────────────────
 ## cols(
 ##   .default = col_double(),
 ##   city_id = col_character(),
@@ -4751,10 +4986,7 @@ veritas_mtl <- read_csv("/Users/dfuller/Documents/INTERACT/data/veritas/veritas_
 ##   home_address_pc = col_character(),
 ##   home_move_date = col_date(format = "")
 ## )
-```
-
-```
-## See spec(...) for full column specifications.
+## ℹ Use `spec()` for the full column specifications.
 ```
 
 ```r
@@ -4799,13 +5031,7 @@ mtl_sd_small <- mtl_sd %>%
                     interact_id = first(interact_id),
                     sensedoc = 1, 
                   )
-```
 
-```
-## `summarise()` ungrouping output (override with `.groups` argument)
-```
-
-```r
 flow_mtl <- left_join(flow_mtl, mtl_sd_small)
 ```
 
@@ -4833,13 +5059,7 @@ mtl_ethica_small <- ethica_data %>%
                     interact_id = first(interact_id),
                     ethica = 1, 
                   )
-```
 
-```
-## `summarise()` ungrouping output (override with `.groups` argument)
-```
-
-```r
 flow_mtl <- left_join(flow_mtl, mtl_ethica_small)
 ```
 
@@ -4872,4 +5092,380 @@ table(flow_mtl$sensedoc, flow_mtl$sd_ethica) ### Number of Ethica and SenseDoc P
 ##    
 ##       2
 ##   1 155
+```
+
+
+# GPS Maps
+
+### Victoria
+
+
+```r
+### Full View
+vic_basemap <- get_map(c(-123.5, 48.5),
+                     source = "google",
+                     maptype = "roadmap", crop = FALSE,
+                     zoom = 10)
+```
+
+```
+## Source : https://maps.googleapis.com/maps/api/staticmap?center=48.5,-123.5&zoom=10&size=640x640&scale=2&maptype=roadmap&language=en-EN&key=xxx-9rGQuKs
+```
+
+```r
+plot(vic_basemap)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-55-1.png)<!-- -->
+
+```r
+vic_points <- ggmap(vic_basemap) + 
+                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.015, 0.015), data = vic_sd, alpha = 1) +
+                  scale_fill_gradient2(low="darkred", high = "darkblue") +
+                  theme_map()
+
+plot(vic_points)
+```
+
+```
+## Warning: Removed 110 rows containing non-finite values (stat_bin2d).
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-55-2.png)<!-- -->
+
+```r
+ggsave("vic_points.jpg", dpi = 150, height = 4, width = 6)
+```
+
+```
+## Warning: Removed 110 rows containing non-finite values (stat_bin2d).
+```
+
+```r
+### Zoom 
+
+vic_basemap_zoom <- get_map(location = "Victoria, BC, Canada",
+                     source = "google",
+                     maptype = "roadmap", crop = FALSE,
+                     zoom = 13)
+```
+
+```
+## Source : https://maps.googleapis.com/maps/api/staticmap?center=Victoria,%20BC,%20Canada&zoom=13&size=640x640&scale=2&maptype=roadmap&language=en-EN&key=xxx-9rGQuKs
+```
+
+```
+## Source : https://maps.googleapis.com/maps/api/geocode/json?address=Victoria,+BC,+Canada&key=xxx-9rGQuKs
+```
+
+```r
+plot(vic_basemap_zoom)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-55-3.png)<!-- -->
+
+```r
+vic_points_zoom <- ggmap(vic_basemap_zoom) + 
+                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.0025, 0.0025), data = vic_sd, alpha = 0.8) +
+                  scale_fill_gradient2(high = "darkblue") +
+                  theme_map()
+
+plot(vic_points_zoom)
+```
+
+```
+## Warning: Removed 339794 rows containing non-finite values (stat_bin2d).
+```
+
+```
+## Warning: Removed 10 rows containing missing values (geom_tile).
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-55-4.png)<!-- -->
+
+```r
+ggsave("vic_points_zoom.jpg", dpi = 150, height = 4, width = 6)
+```
+
+```
+## Warning: Removed 339794 rows containing non-finite values (stat_bin2d).
+
+## Warning: Removed 10 rows containing missing values (geom_tile).
+```
+
+### Vancouver
+
+
+```r
+### Full View
+van_basemap <- get_map(c(-122.9, 49.2),
+                     source = "google",
+                     maptype = "roadmap", crop = FALSE,
+                     zoom = 10)
+```
+
+```
+## Source : https://maps.googleapis.com/maps/api/staticmap?center=49.2,-122.9&zoom=10&size=640x640&scale=2&maptype=roadmap&language=en-EN&key=xxx-9rGQuKs
+```
+
+```r
+plot(van_basemap)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-56-1.png)<!-- -->
+
+```r
+van_points <- ggmap(van_basemap) + 
+                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.015, 0.015), data = van_sd, alpha = 1) +
+                  scale_fill_gradient2(low="darkred", high = "darkblue") + 
+                  theme_map()
+
+plot(van_points)
+```
+
+```
+## Warning: Removed 83 rows containing non-finite values (stat_bin2d).
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-56-2.png)<!-- -->
+
+```r
+ggsave("van_points.jpg", dpi = 150, height = 4, width = 6)
+```
+
+```
+## Warning: Removed 83 rows containing non-finite values (stat_bin2d).
+```
+
+```r
+### Zoom 
+
+van_basemap_zoom <- get_map(c(-123.15, 49.27),
+                     source = "google",
+                     maptype = "roadmap", crop = FALSE,
+                     zoom = 13)
+```
+
+```
+## Source : https://maps.googleapis.com/maps/api/staticmap?center=49.27,-123.15&zoom=13&size=640x640&scale=2&maptype=roadmap&language=en-EN&key=xxx-9rGQuKs
+```
+
+```r
+plot(van_basemap_zoom)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-56-3.png)<!-- -->
+
+```r
+van_points_zoom <- ggmap(van_basemap_zoom) + 
+                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.003, 0.003), data = van_sd, alpha = 0.8) +
+                  scale_fill_gradient2(high = "darkblue") + 
+                  theme_map()
+
+plot(van_points_zoom)
+```
+
+```
+## Warning: Removed 183724 rows containing non-finite values (stat_bin2d).
+```
+
+```
+## Warning: Removed 33 rows containing missing values (geom_tile).
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-56-4.png)<!-- -->
+
+```r
+ggsave("van_points_zoom.jpg", dpi = 150, height = 4, width = 6)
+```
+
+```
+## Warning: Removed 183724 rows containing non-finite values (stat_bin2d).
+
+## Warning: Removed 33 rows containing missing values (geom_tile).
+```
+
+### Saskatoon
+
+
+```r
+### Full View
+sk_basemap <- get_map(location = "Saskatoon, Saskatchewan, Canada",
+                     source = "google",
+                     maptype = "roadmap", crop = FALSE,
+                     zoom = 10)
+```
+
+```
+## Source : https://maps.googleapis.com/maps/api/staticmap?center=Saskatoon,%20Saskatchewan,%20Canada&zoom=10&size=640x640&scale=2&maptype=roadmap&language=en-EN&key=xxx-9rGQuKs
+```
+
+```
+## Source : https://maps.googleapis.com/maps/api/geocode/json?address=Saskatoon,+Saskatchewan,+Canada&key=xxx-9rGQuKs
+```
+
+```r
+plot(sk_basemap)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-57-1.png)<!-- -->
+
+```r
+sk_points <- ggmap(sk_basemap) + 
+                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.015, 0.015), data = sk_sd, alpha = 1) +
+                  scale_fill_gradient2(low="darkred", high = "darkblue") + 
+                  theme_map()
+plot(sk_points)
+```
+
+```
+## Warning: Removed 324 rows containing non-finite values (stat_bin2d).
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-57-2.png)<!-- -->
+
+```r
+ggsave("sk_points.jpg", dpi = 150, height = 4, width = 6)
+```
+
+```
+## Warning: Removed 324 rows containing non-finite values (stat_bin2d).
+```
+
+```r
+### Zoom 
+
+sk_basemap_zoom <- get_map(c(-106.65, 52.14),
+                     source = "google",
+                     maptype = "roadmap", crop = FALSE,
+                     zoom = 12)
+```
+
+```
+## Source : https://maps.googleapis.com/maps/api/staticmap?center=52.14,-106.65&zoom=12&size=640x640&scale=2&maptype=roadmap&language=en-EN&key=xxx-9rGQuKs
+```
+
+```r
+plot(sk_basemap_zoom)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-57-3.png)<!-- -->
+
+```r
+sk_points_zoom <- ggmap(sk_basemap_zoom) + 
+                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.004, 0.004), data = sk_sd, alpha = 0.8) +
+                  scale_fill_gradient2(high = "darkblue") + 
+                  theme_map()
+
+plot(sk_points_zoom)
+```
+
+```
+## Warning: Removed 4461 rows containing non-finite values (stat_bin2d).
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-57-4.png)<!-- -->
+
+```r
+ggsave("sk_points_zoom.jpg", dpi = 150, height = 4, width = 6)
+```
+
+```
+## Warning: Removed 4461 rows containing non-finite values (stat_bin2d).
+```
+
+### Montreal
+
+
+```r
+### Full View
+mtl_basemap <- get_map(location = "Montreal, Quebec, Canada",
+                     source = "google",
+                     maptype = "roadmap", crop = FALSE,
+                     zoom = 10)
+```
+
+```
+## Source : https://maps.googleapis.com/maps/api/staticmap?center=Montreal,%20Quebec,%20Canada&zoom=10&size=640x640&scale=2&maptype=roadmap&language=en-EN&key=xxx-9rGQuKs
+```
+
+```
+## Source : https://maps.googleapis.com/maps/api/geocode/json?address=Montreal,+Quebec,+Canada&key=xxx-9rGQuKs
+```
+
+```r
+plot(mtl_basemap)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-58-1.png)<!-- -->
+
+```r
+mtl_points <- ggmap(mtl_basemap) + 
+                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.015, 0.015), data = mtl_sd, alpha = 1) +
+                  scale_fill_gradient2(low="darkred", high = "darkblue") + 
+                  theme_map()
+
+plot(mtl_points)
+```
+
+```
+## Warning: Removed 3053 rows containing non-finite values (stat_bin2d).
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-58-2.png)<!-- -->
+
+```r
+ggsave("mtl_points.jpg", dpi = 150, height = 4, width = 6)
+```
+
+```
+## Warning: Removed 3053 rows containing non-finite values (stat_bin2d).
+```
+
+```r
+### Zoom 
+
+mtl_basemap_zoom <- get_map(c(-73.6, 45.5),
+                     source = "google",
+                     maptype = "roadmap", crop = FALSE,
+                     zoom = 12)
+```
+
+```
+## Source : https://maps.googleapis.com/maps/api/staticmap?center=45.5,-73.6&zoom=12&size=640x640&scale=2&maptype=roadmap&language=en-EN&key=xxx-9rGQuKs
+```
+
+```r
+plot(mtl_basemap_zoom)
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-58-3.png)<!-- -->
+
+```r
+mtl_points_zoom <- ggmap(mtl_basemap_zoom) + 
+                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.004, 0.004), data = mtl_sd, alpha = 0.8) +
+                  scale_fill_gradient2(high = "darkblue") + 
+                  theme_map()
+
+plot(mtl_points_zoom)
+```
+
+```
+## Warning: Removed 172088 rows containing non-finite values (stat_bin2d).
+```
+
+```
+## Warning: Removed 56 rows containing missing values (geom_tile).
+```
+
+![](baseline_paper_code_files/figure-html/unnamed-chunk-58-4.png)<!-- -->
+
+```r
+ggsave("mtl_points_zoom.jpg", dpi = 150, height = 4, width = 6)
+```
+
+```
+## Warning: Removed 172088 rows containing non-finite values (stat_bin2d).
+
+## Warning: Removed 56 rows containing missing values (geom_tile).
 ```

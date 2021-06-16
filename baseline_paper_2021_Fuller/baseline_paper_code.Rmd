@@ -30,6 +30,7 @@ library(cancensus)
 library(cowplot)
 library(ggspatial)
 library(knitr)
+library(ggpubr)
 
 setwd("/Users/dfuller/Dropbox/Projects/INTERACT_github/publications/baseline_paper_2021_Fuller")
 ```
@@ -662,6 +663,13 @@ soc_cohesion_table <- data %>%
 soc_cohesion_table
 ```
 
+### Writing a csv of the clean(ish) data
+
+```{r}
+write_csv(data, "/Users/dfuller/Documents/INTERACT/data/health_clean.csv")
+```
+
+
 # Physical Activity
 
 ### Reading in the physical activity data from SenseDoc
@@ -1115,6 +1123,48 @@ plot(vic_int_plot)
 ggsave("vic_int_plot.jpg", dpi = 150, height = 4, width = 6)
 ```
 
+#### Victoria Exposure
+
+Using exposure of 250meters because people may deviate between 160 to 288 meters on to separated cycling infrastructure for specific trips. (https://doi.org/10.1016/j.tra.2012.07.005)
+
+```{r victoria exposure prep}
+vic_int_t_1 <- filter(vic_int_t, AAA == "V")
+
+vic_int_t_1 <- st_combine(vic_int_t_1)
+vic_int_t_1 <- st_as_sf(vic_int_t_1)
+vic_int_t_1 <- st_transform(vic_int_t_1, 26910)
+
+vic_int_t_250 = st_buffer(vic_int_t_1$x, dist = 250) # According to stack exchangers the distance is in meters
+
+vic_int_t_250 <- st_transform(vic_int_t_250, 4326)
+vic_int_t_250 <- st_as_sf(vic_int_t_250)
+
+plot(vic_int_t_250)
+```
+
+```{r victoria sensedoc exposure}
+### SenseDoc
+vic_sd_sf <- st_as_sf(vic_sd, coords = c("lon", "lat"), crs = 4326)
+
+vic_sd_sf$exposed <- ifelse(sf::st_intersects(vic_sd_sf, vic_int_t_250, sparse = FALSE), 1, 0)
+
+table(vic_sd_sf$exposed)
+
+vic_sd$exposed <- as.factor(vic_sd_sf$exposed)
+
+exposure_vic_sd <- ggplot() + 
+        geom_point(aes(x = lon, y = lat, colour = exposed), data = vic_sd, alpha = 0.2) +
+        geom_sf(data = vic_int_t_250, alpha = 0.01) +
+        annotation_scale() + 
+        scale_color_manual(labels = c("Not Exposed", "Exposed"),
+                     values = c("grey80", "red")) +
+        labs(color = "Exposure") + 
+        theme_map()
+plot(exposure_vic_sd)
+
+ggsave("exposure_vic_sd.jpg", dpi = 150, height = 4, width = 6)
+```
+
 ### Vancouver
 
 ```{r}
@@ -1150,11 +1200,48 @@ plot(van_int_plot)
 ggsave("van_int_plot.jpg", dpi = 150, height = 4, width = 6)
 ```
 
+#### Vancouver Exposure
+
+```{r}
+van_int_a <- filter(van_int, arbutus == 1)
+
+van_int_a <- st_combine(van_int_a)
+van_int_a <- st_as_sf(van_int_a)
+van_int_a <- st_transform(van_int_a, 26910)
+
+van_int_1_250 = st_buffer(van_int_a$x, dist = 250) # According to stack exchangers the distance is in meters
+
+van_int_1_250 <- st_transform(van_int_1_250, 4326)
+van_int_1_250 <- st_as_sf(van_int_1_250)
+
+plot(van_int_1_250)
+
+van_sd_sf <- st_as_sf(van_sd, coords = c("lon", "lat"), crs = 4326)
+
+van_sd_sf$exposed <- ifelse(sf::st_intersects(van_sd_sf, van_int_1_250, sparse = FALSE), 1, 0)
+
+table(van_sd_sf$exposed)
+
+van_sd$exposed <- as.factor(van_sd_sf$exposed)
+
+exposure_van_sd <- ggplot() + 
+        geom_point(aes(x = lon, y = lat, colour = exposed), data = van_sd, alpha = 0.2) +
+        annotation_scale() + 
+        geom_sf(data = van_int_1_250, alpha=0.01) +
+        scale_color_manual(labels = c("Not Exposed", "Exposed"),
+                     values = c("grey80", "red")) +
+        labs(color = "Exposure") + 
+        theme_map()
+plot(exposure_van_sd)
+
+ggsave("exposure_van_sd.jpg", dpi = 150, height = 4, width = 6)
+```
+
 ### Saskatoon
 
 ```{r}
 sk_cma <- get_census(dataset='CA16', regions=list(CMA="47725"),
-                          level='CMA', use_cache = TRUE, geo_format = "sf")
+                          level='CMA', use_cache = FALSE, geo_format = "sf")
 
 sk_sd <- sd_data %>% filter(city_id == "saskatoon" & in_city == 1) 
 sd_sk_days <- as.data.frame(unique(sk_sd$date))
@@ -1165,8 +1252,6 @@ st_crs(sk_int)
 sk_int_t <- st_transform(sk_int, "+proj=longlat +ellps=WGS84 +datum=WGS84")
 st_crs(sk_int_t)
 sk_int_t
-
-ggplot() + geom_sf(data = sk_int_t, aes(colour = line_name))
 
 sk_int_plot <- ggplot() + 
                   geom_sf(data = sk_cma) +
@@ -1184,6 +1269,43 @@ plot(sk_int_plot)
 ggsave("sk_int_plot.jpg", dpi = 200, height = 4, width = 6)
 ```
 
+#### Saskatoon Exposure
+
+```{r}
+sk_int_1 <- st_combine(sk_int)
+sk_int_1 <- st_as_sf(sk_int_1)
+sk_int_1 <- st_transform(sk_int_1, 26910)
+
+sk_int_1 = st_buffer(sk_int_1$x, dist = 800) 
+
+sk_int_1 <- st_transform(sk_int_1, 4326)
+sk_int_1 <- st_as_sf(sk_int_1)
+
+plot(sk_int_1)
+
+sk_sd_sf <- st_as_sf(sk_sd, coords = c("lon", "lat"), crs = 4326)
+
+sk_sd_sf$exposed <- ifelse(sf::st_intersects(sk_sd_sf, sk_int_1, sparse = FALSE), 1, 0)
+
+table(sk_sd_sf$exposed)
+
+sk_sd$exposed <- as.factor(sk_sd_sf$exposed)
+
+sk_sd <- filter(sk_sd, in_city == 1)
+
+exposure_sk_sd <- ggplot() + 
+        geom_point(aes(x = lon, y = lat, colour = exposed), data = sk_sd, alpha = 0.2) +
+        geom_sf(data = sk_int_1, alpha=0.01) +
+        annotation_scale() + 
+        scale_color_manual(labels = c("Not Exposed", "Exposed"),
+                     values = c("grey80", "red")) +
+        labs(color = "Exposure") + 
+        theme_map()
+plot(exposure_sk_sd)
+
+ggsave("exposure_sk_sd.jpg", dpi = 150, height = 4, width = 6)
+```
+
 ### Montreal
 
 ```{r}
@@ -1193,7 +1315,7 @@ mtl_cma <- get_census(dataset='CA16', regions=list(CMA="47725"),
 mtl_sd <- sd_data %>% filter(city_id == "montreal" & in_city == 1) 
 sd_mtl_days <- as.data.frame(unique(mtl_sd$date))
 
-mtl_cyc <- st_read("/Users/dfuller/Documents/INTERACT/data/intervention/montreal/pistes-cyclables.shp")
+mtl_cyc <- st_read("/Users/dfuller/Documents/INTERACT/data/intervention/montreal/rev_hypothetical.shp")
 mtl_pet <- st_read("/Users/dfuller/Documents/INTERACT/data/intervention/montreal/rues-pietonnes.shp")
 st_crs(mtl_cyc)
 st_crs(mtl_pet)
@@ -1206,7 +1328,7 @@ mtl_int_plot <- ggplot() +
                   geom_sf(data = mtl_cma) +
                   geom_hex(aes(x = lon, y = lat), binwidth = c(0.009, 0.009), data = mtl_sd, alpha = 0.8) +
                   scale_fill_gradient2(name="Count of GPS points", low="lightblue", high = "darkblue") +
-                  geom_sf(data = mtl_cyc, aes(colour = Ville_MTL), alpha = 0.5) +
+                  geom_sf(data = mtl_cyc, alpha = 0.5) +
                   geom_point(aes(x = LONGITUDE, y = LATITUDE), data = mtl_pet, alpha = 0.7, colour = "darkgreen", size = 1) +
                   coord_sf(
                       xlim = sf::st_bbox(mtl_cyc)[c(1,3)],
@@ -1216,6 +1338,52 @@ mtl_int_plot <- ggplot() +
 plot(mtl_int_plot)
 
 ggsave("mtl_int_plot.jpg", dpi = 150, height = 4, width = 6)
+```
+
+#### Montreal Exposure
+
+```{r}
+mtl_cyc_1 <- st_combine(mtl_cyc)
+mtl_cyc_1 <- st_as_sf(mtl_cyc_1)
+mtl_cyc_1 <- st_transform(mtl_cyc_1, 26910)
+
+mtl_cyc_1 = st_buffer(mtl_cyc_1$x, dist = 250) 
+
+mtl_cyc_1 <- st_transform(mtl_cyc_1, 4326)
+mtl_cyc_1 <- st_as_sf(mtl_cyc_1)
+
+plot(mtl_cyc_1)
+
+mtl_sd_sf <- st_as_sf(mtl_sd, coords = c("lon", "lat"), crs = 4326)
+
+mtl_sd_sf$exposed <- ifelse(sf::st_intersects(mtl_sd_sf, mtl_cyc_1, sparse = FALSE), 1, 0)
+
+table(mtl_sd_sf$exposed)
+
+mtl_sd$exposed <- as.factor(mtl_sd_sf$exposed)
+
+exposure_mtl_sd <- ggplot() + 
+        geom_point(aes(x = lon, y = lat, colour = exposed), data = mtl_sd, alpha = 0.2) +
+        geom_sf(data = mtl_cyc_1, alpha=0.01) +    
+        annotation_scale() + 
+        scale_color_manual(labels = c("Not Exposed", "Exposed"),
+                     values = c("grey80", "red")) +
+        labs(color = "Exposure") + 
+        theme_map()
+plot(exposure_mtl_sd)
+
+ggsave("exposure_mtl_sd.jpg", dpi = 150, height = 4, width = 6)
+```
+
+### Combining SenseDoc Exposure plots
+
+```{r}
+exposure_figure_sd <- ggarrange(exposure_vic_sd, exposure_van_sd, exposure_sk_sd, exposure_mtl_sd,
+                    labels = c("Victoria", "Vancouver", "Saskatoon", "Montreal"),
+                    ncol = 2, nrow = 2)
+plot(exposure_figure_sd)
+
+ggsave("exposure_figure_sd.jpg", dpi = 150, height = 4, width = 6)
 ```
 
 # Interventions Ethica Data
@@ -1293,7 +1461,7 @@ mtl_int_plot_eth <- ggplot() +
                   geom_sf(data = mtl_cma) +
                   geom_hex(aes(x = lon, y = lat), binwidth = c(0.009, 0.009), data = ethica_mtl, alpha = 0.8) +
                   scale_fill_gradient2(name="Count of GPS points", low="lightblue", high = "darkblue") +
-                  geom_sf(data = mtl_cyc, aes(colour = Ville_MTL), alpha = 0.5) +
+                  geom_sf(data = mtl_cyc, alpha = 0.5) +
                   geom_point(aes(x = LONGITUDE, y = LATITUDE), data = mtl_pet, alpha = 0.7, colour = "darkgreen", size = 1) +
                   coord_sf(
                       xlim = sf::st_bbox(mtl_cyc)[c(1,3)],
@@ -1306,158 +1474,10 @@ ggsave("mtl_int_plot_eth.jpg", dpi = 150, height = 4, width = 6)
 ```
 
 
-# GPS Maps
+# Sensedoc and Ethica Comparisons per day
 
 ### Victoria
 
-```{r}
-### Full View
-vic_basemap <- get_map(c(-123.5, 48.5),
-                     source = "google",
-                     maptype = "roadmap", crop = FALSE,
-                     zoom = 10)
-plot(vic_basemap)
-
-vic_points <- ggmap(vic_basemap) + 
-                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.015, 0.015), data = vic_sd, alpha = 1) +
-                  scale_fill_gradient2(low="darkred", high = "darkblue") +
-                  theme_map()
-
-plot(vic_points)
-
-ggsave("vic_points.jpg", dpi = 150, height = 4, width = 6)
-
-### Zoom 
-
-vic_basemap_zoom <- get_map(location = "Victoria, BC, Canada",
-                     source = "google",
-                     maptype = "roadmap", crop = FALSE,
-                     zoom = 13)
-plot(vic_basemap_zoom)
-
-vic_points_zoom <- ggmap(vic_basemap_zoom) + 
-                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.0025, 0.0025), data = vic_sd, alpha = 0.8) +
-                  scale_fill_gradient2(high = "darkblue") +
-                  theme_map()
-
-plot(vic_points_zoom)
-
-ggsave("vic_points_zoom.jpg", dpi = 150, height = 4, width = 6)
-``` 
-
-### Vancouver
-
-```{r}
-### Full View
-van_basemap <- get_map(c(-122.9, 49.2),
-                     source = "google",
-                     maptype = "roadmap", crop = FALSE,
-                     zoom = 10)
-plot(van_basemap)
-
-van_points <- ggmap(van_basemap) + 
-                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.015, 0.015), data = van_sd, alpha = 1) +
-                  scale_fill_gradient2(low="darkred", high = "darkblue") + 
-                  theme_map()
-
-plot(van_points)
-
-ggsave("van_points.jpg", dpi = 150, height = 4, width = 6)
-
-### Zoom 
-
-van_basemap_zoom <- get_map(c(-123.15, 49.27),
-                     source = "google",
-                     maptype = "roadmap", crop = FALSE,
-                     zoom = 13)
-plot(van_basemap_zoom)
-
-van_points_zoom <- ggmap(van_basemap_zoom) + 
-                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.003, 0.003), data = van_sd, alpha = 0.8) +
-                  scale_fill_gradient2(high = "darkblue") + 
-                  theme_map()
-
-plot(van_points_zoom)
-
-ggsave("van_points_zoom.jpg", dpi = 150, height = 4, width = 6)
-``` 
-
-### Saskatoon
-
-```{r}
-### Full View
-sk_basemap <- get_map(location = "Saskatoon, Saskatchewan, Canada",
-                     source = "google",
-                     maptype = "roadmap", crop = FALSE,
-                     zoom = 10)
-plot(sk_basemap)
-
-sk_points <- ggmap(sk_basemap) + 
-                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.015, 0.015), data = sk_sd, alpha = 1) +
-                  scale_fill_gradient2(low="darkred", high = "darkblue") + 
-                  theme_map()
-plot(sk_points)
-
-ggsave("sk_points.jpg", dpi = 150, height = 4, width = 6)
-
-### Zoom 
-
-sk_basemap_zoom <- get_map(c(-106.65, 52.14),
-                     source = "google",
-                     maptype = "roadmap", crop = FALSE,
-                     zoom = 12)
-plot(sk_basemap_zoom)
-
-sk_points_zoom <- ggmap(sk_basemap_zoom) + 
-                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.004, 0.004), data = sk_sd, alpha = 0.8) +
-                  scale_fill_gradient2(high = "darkblue") + 
-                  theme_map()
-
-plot(sk_points_zoom)
-
-ggsave("sk_points_zoom.jpg", dpi = 150, height = 4, width = 6)
-``` 
-
-### Montreal
-
-```{r}
-### Full View
-mtl_basemap <- get_map(location = "Montreal, Quebec, Canada",
-                     source = "google",
-                     maptype = "roadmap", crop = FALSE,
-                     zoom = 10)
-plot(mtl_basemap)
-
-mtl_points <- ggmap(mtl_basemap) + 
-                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.015, 0.015), data = mtl_sd, alpha = 1) +
-                  scale_fill_gradient2(low="darkred", high = "darkblue") + 
-                  theme_map()
-
-plot(mtl_points)
-
-ggsave("mtl_points.jpg", dpi = 150, height = 4, width = 6)
-
-### Zoom 
-
-mtl_basemap_zoom <- get_map(c(-73.6, 45.5),
-                     source = "google",
-                     maptype = "roadmap", crop = FALSE,
-                     zoom = 12)
-plot(mtl_basemap_zoom)
-
-mtl_points_zoom <- ggmap(mtl_basemap_zoom) + 
-                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.004, 0.004), data = mtl_sd, alpha = 0.8) +
-                  scale_fill_gradient2(high = "darkblue") + 
-                  theme_map()
-
-plot(mtl_points_zoom)
-
-ggsave("mtl_points_zoom.jpg", dpi = 150, height = 4, width = 6)
-``` 
-
-## Sensedoc and Ethica Comparisons per day
-
-### Victoria
 ```{r}
 ### Victoria
 vic_eth <- ethica_data %>% filter(city_id == "victoria" & in_city == 1) 
@@ -1466,7 +1486,7 @@ length(vic_eth$interact_id)
 vic_eth_sd <- inner_join(vic_sd, vic_eth, by = c("interact_id", "utcdate", "city_id"))
 table(vic_eth_sd$interact_id)  ### 40 participants
 
-vic_eth_101493098 <- vic_eth_sd %>% filter(interact_id == "101493098" & date.x != "2017-07-27")
+vic_eth_date_1 <- vic_eth_sd %>% filter(date.x == "2017-07-27")
 
 ### Victoria 
 vic_da <- get_census(dataset='CA16', regions=list(CMA="59935"),
@@ -1486,49 +1506,48 @@ plot(ethica_vic.jpg)
 
 ggsave("ethica_vic.jpg", dpi = 150, height = 4, width = 6)
 
-### Victoria 101493098
-vic_101493098_sd <- ggplot() + 
+### Victoria SENSEDOC
+vic_sd_hex <- ggplot() + 
                   #geom_sf(data = vic_da, alpha = 0.5, colour = "grey50") +
-                  geom_hex(aes(x = lon.x, y = lat.x), data = vic_eth_101493098, binwidth = c(0.009, 0.009)) +
+                  geom_hex(aes(x = lon, y = lat), data = vic_sd, binwidth = c(0.003, 0.003)) +
                   coord_sf(
                       xlim = sf::st_bbox(vic_int_t)[c(1,3)],
                       ylim = sf::st_bbox(vic_int_t)[c(2,4)]) +
                   #annotation_scale() + 
-                  scale_fill_gradient(name="Count of GPS points") +
-                  facet_wrap(~ date.x) +
+                  scale_fill_gradient(name="Count of GPS points", low = "grey90", high = "red", na.value = "white") + 
+                  #facet_wrap(~ date) +
                   labs(x = "Longitude", y = "Latitude") +
                   theme_minimal() + 
                   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
                   scale_y_continuous(breaks=seq(48.44,48.54)) +
                   scale_x_continuous(breaks=c(123.44, -123.30))
 
-plot(vic_101493098_sd)
+plot(vic_sd_hex)
 
-ggsave("vic_101493098_sd.jpg", dpi = 150, height = 4, width = 6)
+ggsave("vic_sd_hex.jpg", dpi = 150, height = 4, width = 6)
 
-vic_101493098_eth <- ggplot() + 
+vic_ethica_hex <- ggplot() + 
                   #geom_sf(data = vic_da, alpha = 0.5, colour = "grey50") +
-                  geom_hex(aes(x = lon.y, y = lat.y), data = vic_eth_101493098, binwidth = c(0.009, 0.009)) +
+                  geom_hex(aes(x = lon, y = lat), data = vic_ethica, binwidth = c(0.003, 0.003)) +
                   coord_sf(
                       xlim = sf::st_bbox(vic_int_t)[c(1,3)],
                       ylim = sf::st_bbox(vic_int_t)[c(2,4)]) +
                   #annotation_scale() + 
-                  scale_fill_gradient(name="Count of GPS points") +
-                  facet_wrap(~ date.x) +
+                  scale_fill_gradient(name="Count of GPS points", low = "grey90", high = "red", na.value = "white") +
+                  #facet_wrap(~ date) +
                   labs(x = "Longitude", y = "Latitude") +
                   theme_minimal() + 
                   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
                   scale_y_continuous(breaks=seq(48.44,48.54)) +
                   scale_x_continuous(breaks=c(123.44, -123.30))
                
-plot(vic_101493098_eth)
+plot(vic_ethica_hex)
 
-ggsave("vic_101493098_ethica.jpg", dpi = 150, height = 4, width = 6)
+ggsave("vic_ethica_hex.jpg", dpi = 150, height = 4, width = 6)
 ```
 
-## Sensedoc and Ethica Comparisons per day
-
 ### Vancouver
+
 ```{r}
 ### Vancouver
 van_eth <- ethica_data %>% filter(city_id == "vancouver" & in_city == 1) 
@@ -1555,9 +1574,46 @@ ethica_van <- ggplot() +
 plot(ethica_van)
 
 ggsave("ethica_van.jpg", dpi = 150, height = 4, width = 6)
-```
 
-## Sensedoc and Ethica Comparisons per day
+### Victoria SENSEDOC
+van_sd_hex <- ggplot() + 
+                  #geom_sf(data = vic_da, alpha = 0.5, colour = "grey50") +
+                  geom_hex(aes(x = lon, y = lat), data = van_sd, binwidth = c(0.002, 0.002)) +
+                  coord_sf(
+                      xlim = sf::st_bbox(van_int)[c(1,3)],
+                      ylim = sf::st_bbox(van_int)[c(2,4)]) +
+                  #annotation_scale() + 
+                  scale_fill_gradient(name="Count of GPS points", low = "grey90", high = "red", na.value = "white") + 
+                  #facet_wrap(~ date) +
+                  labs(x = "Longitude", y = "Latitude") +
+                  theme_minimal() + 
+                  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+                  scale_y_continuous(breaks=seq(48.44,48.54)) +
+                  scale_x_continuous(breaks=c(123.44, -123.30))
+
+plot(van_sd_hex)
+
+ggsave("van_sd_hex.jpg", dpi = 150, height = 4, width = 6)
+
+van_eth_hex <- ggplot() + 
+                  #geom_sf(data = vic_da, alpha = 0.5, colour = "grey50") +
+                  geom_hex(aes(x = lon, y = lat), data = van_ethica, binwidth = c(0.002, 0.002)) +
+                  coord_sf(
+                      xlim = sf::st_bbox(van_int)[c(1,3)],
+                      ylim = sf::st_bbox(van_int)[c(2,4)]) +
+                  #annotation_scale() + 
+                  scale_fill_gradient(name="Count of GPS points", low = "grey90", high = "red", na.value = "white") +
+                  #facet_wrap(~ date) +
+                  labs(x = "Longitude", y = "Latitude") +
+                  theme_minimal() + 
+                  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+                  scale_y_continuous(breaks=seq(48.44,48.54)) +
+                  scale_x_continuous(breaks=c(123.44, -123.30))
+               
+plot(van_eth_hex)
+
+ggsave("van_eth_hex.jpg", dpi = 150, height = 4, width = 6)
+```
 
 ### Saskatoon
 
@@ -1587,9 +1643,48 @@ ethica_sk <- ggplot() +
 plot(ethica_sk)
 
 ggsave("ethica_sk.jpg", dpi = 150, height = 4, width = 6)
-```
 
-## Sensedoc and Ethica Comparisons per day
+### Saskatoon SENSEDOC
+sk_sd_hex <- ggplot() + 
+                  #geom_sf(data = vic_da, alpha = 0.5, colour = "grey50") +
+                  geom_hex(aes(x = lon, y = lat), data = sk_sd, binwidth = c(0.002, 0.002)) +
+                  coord_sf(
+                      xlim = sf::st_bbox(sk_int_t)[c(1,3)],
+                      ylim = sf::st_bbox(sk_int_t)[c(2,4)]) +
+                  #annotation_scale() + 
+                  scale_fill_gradient(name="Count of GPS points", low = "grey90", high = "red", na.value = "white") + 
+                  #facet_wrap(~ date) +
+                  labs(x = "Longitude", y = "Latitude") +
+                  theme_minimal() + 
+                  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+                  scale_y_continuous(breaks=seq(48.44,48.54)) +
+                  scale_x_continuous(breaks=c(123.44, -123.30))
+
+plot(sk_sd_hex)
+
+ggsave("sk_sd_hex.jpg", dpi = 150, height = 4, width = 6)
+
+### Saskatoon Ethica
+
+sk_eth_hex <- ggplot() + 
+                  #geom_sf(data = vic_da, alpha = 0.5, colour = "grey50") +
+                  geom_hex(aes(x = lon, y = lat), data = sk_eth, binwidth = c(0.002, 0.002)) +
+                  coord_sf(
+                      xlim = sf::st_bbox(sk_int_t)[c(1,3)],
+                      ylim = sf::st_bbox(sk_int_t)[c(2,4)]) +
+                  #annotation_scale() + 
+                  scale_fill_gradient(name="Count of GPS points", low = "grey90", high = "red", na.value = "white") +
+                  #facet_wrap(~ date) +
+                  labs(x = "Longitude", y = "Latitude") +
+                  theme_minimal() + 
+                  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+                  scale_y_continuous(breaks=seq(48.44,48.54)) +
+                  scale_x_continuous(breaks=c(123.44, -123.30))
+               
+plot(sk_eth_hex)
+
+ggsave("sk_eth_hex.jpg", dpi = 150, height = 4, width = 6)
+```
 
 ### Montreal
 
@@ -1617,6 +1712,199 @@ ethica_mtl <- ggplot() +
 plot(ethica_mtl)
 
 ggsave("ethica_mtl.jpg", dpi = 150, height = 4, width = 6)
+
+### Montreal SENSEDOC
+mtl_sd_hex <- ggplot() + 
+                  #geom_sf(data = mtl_da, alpha = 0.1, colour = "white") +
+                  geom_hex(aes(x = lon, y = lat), data = mtl_sd, binwidth = c(0.004, 0.004)) +
+                  coord_sf(
+                      xlim = sf::st_bbox(mtl_cyc)[c(1,3)],
+                      ylim = sf::st_bbox(mtl_cyc)[c(2,4)]) +
+                  #annotation_scale() + 
+                  scale_fill_gradient(name="Count of GPS points", low = "grey90", high = "red", na.value = "white") + 
+                  #facet_wrap(~ date) +
+                  labs(x = "Longitude", y = "Latitude") +
+                  theme_minimal() + 
+                  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+                  scale_y_continuous(breaks=seq(48.44,48.54)) +
+                  scale_x_continuous(breaks=c(123.44, -123.30))
+
+plot(mtl_sd_hex)
+
+ggsave("mtl_sd_hex.jpg", dpi = 150, height = 4, width = 6)
+
+### Montreal ETHICA
+
+mtl_eth_hex <- ggplot() + 
+                  #geom_sf(data = vic_da, alpha = 0.5, colour = "grey50") +
+                  geom_hex(aes(x = lon, y = lat), data = mtl_eth, binwidth = c(0.004, 0.004)) +
+                  coord_sf(
+                      xlim = sf::st_bbox(mtl_cyc)[c(1,3)],
+                      ylim = sf::st_bbox(mtl_cyc)[c(2,4)]) +
+                  #annotation_scale() + 
+                  scale_fill_gradient(name="Count of GPS points", low = "grey90", high = "red", na.value = "white") +
+                  #facet_wrap(~ date) +
+                  labs(x = "Longitude", y = "Latitude") +
+                  theme_minimal() + 
+                  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+                  scale_y_continuous(breaks=seq(48.44,48.54)) +
+                  scale_x_continuous(breaks=c(123.44, -123.30))
+               
+plot(mtl_eth_hex)
+
+ggsave("mtl_eth_hex.jpg", dpi = 150, height = 4, width = 6)
+```
+
+# Ethica Exposures
+
+#### Victoria Ethica Exposure
+
+```{r}
+vic_eth_sf <- st_as_sf(vic_eth, coords = c("lon", "lat"), crs = 4326)
+
+vic_eth_sf$exposed <- ifelse(sf::st_intersects(vic_eth_sf, vic_int_t_250, sparse = FALSE), 1, 0)
+
+table(vic_eth_sf$exposed)
+
+vic_eth$exposed <- as.factor(vic_eth_sf$exposed)
+
+exposure_vic_eth <- ggplot() + 
+        geom_point(aes(x = lon, y = lat, colour = exposed), data = vic_eth, alpha = 0.2) +
+        annotation_scale() + 
+        geom_sf(data = van_int_1_250, alpha=0.01) +
+        scale_color_manual(labels = c("Not Exposed", "Exposed"),
+                     values = c("grey80", "red")) +
+        labs(color = "Exposure") + 
+        theme_map()
+plot(exposure_vic_eth)
+
+ggsave("exposure_vic_eth.jpg", dpi = 150, height = 4, width = 6)
+```
+
+#### Vancouver Ethica Exposure
+
+```{r}
+van_eth_sf <- st_as_sf(van_eth, coords = c("lon", "lat"), crs = 4326)
+
+van_eth_sf$exposed <- ifelse(sf::st_intersects(van_eth_sf, van_int_1_250, sparse = FALSE), 1, 0)
+
+table(van_eth_sf$exposed)
+
+van_eth$exposed <- as.factor(van_eth_sf$exposed)
+
+exposure_van_eth <- ggplot() +         
+        geom_sf(data = van_int_1_250, alpha=0.01) +
+        geom_point(aes(x = lon, y = lat, colour = exposed), data = van_eth, alpha = 0.2) +
+        annotation_scale() + 
+        scale_color_manual(labels = c("Not Exposed", "Exposed"),
+                     values = c("grey80", "red")) +
+        labs(color = "Exposure") + 
+        theme_map()
+plot(exposure_van_eth)
+
+ggsave("exposure_van_eth.jpg", dpi = 150, height = 4, width = 6)
+```
+
+#### Saskatoon Ethica Exposure
+
+```{r saskatoon ethica exposure}
+sk_eth_sf <- st_as_sf(sk_eth, coords = c("lon", "lat"), crs = 4326)
+
+sk_eth_sf$exposed <- ifelse(sf::st_intersects(sk_eth_sf, sk_int_1, sparse = FALSE), 1, 0)
+
+table(sk_eth_sf$exposed)
+
+sk_eth$exposed <- as.factor(sk_eth_sf$exposed)
+
+exposure_sk_eth <- ggplot() + 
+        geom_point(aes(x = lon, y = lat, colour = exposed), data = sk_eth, alpha = 0.2) +
+        geom_sf(data = sk_int_1, alpha=0.01) +
+        annotation_scale() + 
+        scale_color_manual(labels = c("Not Exposed", "Exposed"),
+                     values = c("grey80", "red")) +
+        labs(color = "Exposure") + 
+        theme_map()
+plot(exposure_sk_eth)
+
+ggsave("exposure_sk_eth.jpg", dpi = 150, height = 4, width = 6)
+```
+
+
+#### Montreal Ethica Exposure
+
+```{r}
+mtl_eth_sf <- st_as_sf(mtl_eth, coords = c("lon", "lat"), crs = 4326)
+
+mtl_eth_sf$exposed <- ifelse(sf::st_intersects(mtl_eth_sf, mtl_cyc_1, sparse = FALSE), 1, 0)
+
+table(mtl_eth_sf$exposed)
+
+mtl_eth$exposed <- as.factor(mtl_eth_sf$exposed)
+
+exposure_mtl_eth <- ggplot() + 
+        geom_point(aes(x = lon, y = lat, colour = exposed), data = mtl_eth, alpha = 0.2) +
+        geom_sf(data = mtl_cyc_1, alpha=0.01) +    
+        annotation_scale() + 
+        scale_color_manual(labels = c("Not Exposed", "Exposed"),
+                     values = c("grey80", "red")) +
+        labs(color = "Exposure") + 
+        theme_map()
+plot(exposure_mtl_eth)
+
+ggsave("exposure_mtl_eth.jpg", dpi = 150, height = 4, width = 6)
+```
+
+### Combining SenseDoc Exposure plots
+
+```{r}
+exposure_figure_eth <- ggarrange(exposure_vic_eth, exposure_van_eth, exposure_sk_eth, exposure_mtl_eth,
+                    labels = c("Victoria", "Vancouver", "Saskatoon", "Montreal"),
+                    ncol = 2, nrow = 2)
+plot(exposure_figure_eth)
+
+ggsave("exposure_figure_eth.jpg", dpi = 150, height = 4, width = 6)
+```
+
+# Exposure Measures Sensdoc/Ethica Abosulte and Relative
+
+### Sensedoc
+
+```{r}
+sd <- rbind(vic_sd, van_sd, sk_sd, mtl_sd)
+table(sd$exposed)
+
+sd$exposed <- as.numeric(as.character(sd$exposed))
+
+exposure_sd <- sd %>%
+                  group_by(interact_id, city_id, date) %>%
+                    summarise(
+                      tot_minutes = first(minutes_id_date_city),
+                      abs_exposure = sum(exposed), 
+                      rel_exposure = abs_exposure/tot_minutes
+                    )
+
+exposure_sd %>% group_by(city_id) %>%
+                  get_summary_stats(abs_exposure, rel_exposure)
+```
+
+### Ethica
+
+```{r}
+ethica <- rbind(vic_eth, van_eth, sk_eth, mtl_eth)
+table(ethica$exposed)
+
+ethica$exposed <- as.numeric(as.character(ethica$exposed))
+
+exposure_ethica <- ethica %>%
+                  group_by(interact_id, city_id, date) %>%
+                    summarise(
+                      tot_minutes = first(minutes_id_date_city),
+                      abs_exposure = sum(exposed), 
+                      rel_exposure = abs_exposure/tot_minutes
+                    )
+
+exposure_ethica %>% group_by(city_id) %>%
+                  get_summary_stats(abs_exposure, rel_exposure)
 ```
 
 # Participant Data Flow
@@ -1842,3 +2130,153 @@ flow_mtl <- flow_mtl %>%
 
 table(flow_mtl$sensedoc, flow_mtl$sd_ethica) ### Number of Ethica and SenseDoc Participants
 ```
+
+
+# GPS Maps
+
+### Victoria
+
+```{r}
+### Full View
+vic_basemap <- get_map(c(-123.5, 48.5),
+                     source = "google",
+                     maptype = "roadmap", crop = FALSE,
+                     zoom = 10)
+plot(vic_basemap)
+
+vic_points <- ggmap(vic_basemap) + 
+                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.015, 0.015), data = vic_sd, alpha = 1) +
+                  scale_fill_gradient2(low="darkred", high = "darkblue") +
+                  theme_map()
+
+plot(vic_points)
+
+ggsave("vic_points.jpg", dpi = 150, height = 4, width = 6)
+
+### Zoom 
+
+vic_basemap_zoom <- get_map(location = "Victoria, BC, Canada",
+                     source = "google",
+                     maptype = "roadmap", crop = FALSE,
+                     zoom = 13)
+plot(vic_basemap_zoom)
+
+vic_points_zoom <- ggmap(vic_basemap_zoom) + 
+                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.0025, 0.0025), data = vic_sd, alpha = 0.8) +
+                  scale_fill_gradient2(high = "darkblue") +
+                  theme_map()
+
+plot(vic_points_zoom)
+
+ggsave("vic_points_zoom.jpg", dpi = 150, height = 4, width = 6)
+``` 
+
+### Vancouver
+
+```{r}
+### Full View
+van_basemap <- get_map(c(-122.9, 49.2),
+                     source = "google",
+                     maptype = "roadmap", crop = FALSE,
+                     zoom = 10)
+plot(van_basemap)
+
+van_points <- ggmap(van_basemap) + 
+                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.015, 0.015), data = van_sd, alpha = 1) +
+                  scale_fill_gradient2(low="darkred", high = "darkblue") + 
+                  theme_map()
+
+plot(van_points)
+
+ggsave("van_points.jpg", dpi = 150, height = 4, width = 6)
+
+### Zoom 
+
+van_basemap_zoom <- get_map(c(-123.15, 49.27),
+                     source = "google",
+                     maptype = "roadmap", crop = FALSE,
+                     zoom = 13)
+plot(van_basemap_zoom)
+
+van_points_zoom <- ggmap(van_basemap_zoom) + 
+                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.003, 0.003), data = van_sd, alpha = 0.8) +
+                  scale_fill_gradient2(high = "darkblue") + 
+                  theme_map()
+
+plot(van_points_zoom)
+
+ggsave("van_points_zoom.jpg", dpi = 150, height = 4, width = 6)
+``` 
+
+### Saskatoon
+
+```{r}
+### Full View
+sk_basemap <- get_map(location = "Saskatoon, Saskatchewan, Canada",
+                     source = "google",
+                     maptype = "roadmap", crop = FALSE,
+                     zoom = 10)
+plot(sk_basemap)
+
+sk_points <- ggmap(sk_basemap) + 
+                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.015, 0.015), data = sk_sd, alpha = 1) +
+                  scale_fill_gradient2(low="darkred", high = "darkblue") + 
+                  theme_map()
+plot(sk_points)
+
+ggsave("sk_points.jpg", dpi = 150, height = 4, width = 6)
+
+### Zoom 
+
+sk_basemap_zoom <- get_map(c(-106.65, 52.14),
+                     source = "google",
+                     maptype = "roadmap", crop = FALSE,
+                     zoom = 12)
+plot(sk_basemap_zoom)
+
+sk_points_zoom <- ggmap(sk_basemap_zoom) + 
+                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.004, 0.004), data = sk_sd, alpha = 0.8) +
+                  scale_fill_gradient2(high = "darkblue") + 
+                  theme_map()
+
+plot(sk_points_zoom)
+
+ggsave("sk_points_zoom.jpg", dpi = 150, height = 4, width = 6)
+``` 
+
+### Montreal
+
+```{r}
+### Full View
+mtl_basemap <- get_map(location = "Montreal, Quebec, Canada",
+                     source = "google",
+                     maptype = "roadmap", crop = FALSE,
+                     zoom = 10)
+plot(mtl_basemap)
+
+mtl_points <- ggmap(mtl_basemap) + 
+                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.015, 0.015), data = mtl_sd, alpha = 1) +
+                  scale_fill_gradient2(low="darkred", high = "darkblue") + 
+                  theme_map()
+
+plot(mtl_points)
+
+ggsave("mtl_points.jpg", dpi = 150, height = 4, width = 6)
+
+### Zoom 
+
+mtl_basemap_zoom <- get_map(c(-73.6, 45.5),
+                     source = "google",
+                     maptype = "roadmap", crop = FALSE,
+                     zoom = 12)
+plot(mtl_basemap_zoom)
+
+mtl_points_zoom <- ggmap(mtl_basemap_zoom) + 
+                  geom_bin2d(aes(x = lon, y = lat), binwidth = c(0.004, 0.004), data = mtl_sd, alpha = 0.8) +
+                  scale_fill_gradient2(high = "darkblue") + 
+                  theme_map()
+
+plot(mtl_points_zoom)
+
+ggsave("mtl_points_zoom.jpg", dpi = 150, height = 4, width = 6)
+``` 
