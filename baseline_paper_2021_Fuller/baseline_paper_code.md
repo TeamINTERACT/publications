@@ -3001,7 +3001,7 @@ table(vic_int_t$AAA)
 vic_int_plot <- ggplot() + 
                   geom_sf(data = vic_cma) +
                   geom_hex(aes(x = lon, y = lat), binwidth = c(0.005, 0.005), data = vic_sd, alpha = 0.8) +
-                  scale_fill_gradient2(name="Count of GPS points", low="lightblue", high = "darkblue") +
+                  scale_fill_gradient(name="Count of GPS points", low = "white", high = "red") +
                   geom_sf(data = vic_int_t, aes(colour = AAA)) +
                   coord_sf(
                       xlim = sf::st_bbox(vic_int_t)[c(1,3)],
@@ -3181,8 +3181,7 @@ ggplot() + geom_sf(data = van_int, aes(colour = arbutus))
 van_int_plot <- ggplot() + 
                   geom_sf(data = van_cma) +
                   geom_hex(aes(x = lon, y = lat), binwidth = c(0.005, 0.005), data = van_sd, alpha = 0.8) +
-                  scale_fill_gradient2(name="Count of GPS points", low="lightblue", high = "darkblue") +
-                  geom_sf(data = van_int, aes(colour = arbutus)) +
+                  scale_fill_gradient(name="Count of GPS points", low = "white", high = "red") +                                     geom_sf(data = van_int, aes(colour = arbutus)) +
                   coord_sf(
                       xlim = sf::st_bbox(van_int)[c(1,3)],
                       ylim = sf::st_bbox(van_int)[c(2,4)]) + 
@@ -3400,12 +3399,10 @@ sk_int_t
 sk_int_plot <- ggplot() + 
                   geom_sf(data = sk_cma) +
                   geom_hex(aes(x = lon, y = lat), binwidth = c(0.005, 0.005), data = sk_sd, alpha = 0.8) +
-                  scale_fill_gradient2(name="Count of GPS points", low="lightblue", high = "darkblue") +
-                  geom_sf(data = sk_int_t, aes(colour = line_name)) +
+                  scale_fill_gradient(name="Count of GPS points", low = "white", high = "red") +                                     geom_sf(data = sk_int_t) +
                   coord_sf(
                       xlim = sf::st_bbox(sk_int_t)[c(1,3)],
                       ylim = sf::st_bbox(sk_int_t)[c(2,4)]) + 
-                  scale_color_manual(name="BRT Routes", labels=c("Route 1", "Route 2", "Route 3"), values=c("grey20", "grey50", "grey80")) +
                   annotation_scale() + 
                   theme_map()
 plot(sk_int_plot)
@@ -3482,12 +3479,32 @@ ggsave("exposure_sk_sd.jpg", dpi = 150, height = 4, width = 6)
 
 
 ```r
-mtl_cma <- get_census(dataset='CA16', regions=list(CMA="47725"),
-                          level='CMA', use_cache = TRUE, geo_format = "sf")
+mtl_cma <- get_census(dataset='CA16', regions=list(CMA="24462"),
+                          level='CMA', use_cache = FALSE, geo_format = "sf")
 ```
 
 ```
-## Reading geo data from local cache.
+## Querying CensusMapper API...
+```
+
+```
+## 
+Downloading: 3.6 kB     
+Downloading: 3.6 kB     
+Downloading: 7.6 kB     
+Downloading: 7.6 kB     
+Downloading: 12 kB     
+Downloading: 12 kB     
+Downloading: 16 kB     
+Downloading: 16 kB     
+Downloading: 20 kB     
+Downloading: 20 kB     
+Downloading: 22 kB     
+Downloading: 22 kB     
+Downloading: 22 kB     
+Downloading: 22 kB     
+Downloading: 22 kB     
+Downloading: 22 kB
 ```
 
 ```r
@@ -3604,13 +3621,12 @@ ggplot() + geom_sf(data = mtl_cyc)
 mtl_int_plot <- ggplot() + 
                   geom_sf(data = mtl_cma) +
                   geom_hex(aes(x = lon, y = lat), binwidth = c(0.009, 0.009), data = mtl_sd, alpha = 0.8) +
-                  scale_fill_gradient2(name="Count of GPS points", low="lightblue", high = "darkblue") +
+                  scale_fill_gradient(name="Count of GPS points", low = "white", high = "red") +
                   geom_sf(data = mtl_cyc, alpha = 0.5) +
-                  geom_point(aes(x = LONGITUDE, y = LATITUDE), data = mtl_pet, alpha = 0.7, colour = "darkgreen", size = 1) +
                   coord_sf(
                       xlim = sf::st_bbox(mtl_cyc)[c(1,3)],
                       ylim = sf::st_bbox(mtl_cyc)[c(2,4)]) + 
-                  scale_color_manual(name="Existing Cycling Routes", labels=c("Montreal", "Not Montreal"), values=c("grey20", "grey50")) +                  annotation_scale() + 
+                  annotation_scale() + 
                   theme_map()
 plot(mtl_int_plot)
 ```
@@ -3761,11 +3777,11 @@ sk_int_plot_eth <- ggplot() +
                   geom_sf(data = sk_cma) +
                   geom_hex(aes(x = lon, y = lat), binwidth = c(0.005, 0.005), data = sk_eth, alpha = 0.8) +
                   scale_fill_gradient2(name="Count of GPS points", low="lightblue", high = "darkblue") +
-                  geom_sf(data = sk_int_t, aes(colour = line_name)) +
+                  geom_sf(data = sk_int_t) +
                   coord_sf(
                       xlim = sf::st_bbox(sk_int_t)[c(1,3)],
                       ylim = sf::st_bbox(sk_int_t)[c(2,4)]) + 
-                  scale_color_manual(name="BRT Routes", labels=c("Route 1", "Route 2", "Route 3"), values=c("grey20", "grey50", "grey80")) +
+                  scale_color_manual(name="BRT Routes") +
                   annotation_scale() + 
                   theme_map()
 plot(sk_int_plot_eth)
@@ -3788,11 +3804,10 @@ mtl_int_plot_eth <- ggplot() +
                   geom_hex(aes(x = lon, y = lat), binwidth = c(0.009, 0.009), data = ethica_mtl, alpha = 0.8) +
                   scale_fill_gradient2(name="Count of GPS points", low="lightblue", high = "darkblue") +
                   geom_sf(data = mtl_cyc, alpha = 0.5) +
-                  geom_point(aes(x = LONGITUDE, y = LATITUDE), data = mtl_pet, alpha = 0.7, colour = "darkgreen", size = 1) +
                   coord_sf(
                       xlim = sf::st_bbox(mtl_cyc)[c(1,3)],
                       ylim = sf::st_bbox(mtl_cyc)[c(2,4)]) + 
-                  scale_color_manual(name="Existing Cycling Routes", labels=c("Montreal", "Not Montreal"), values=c("grey20", "grey50")) +                  annotation_scale() + 
+                  annotation_scale() + 
                   theme_map()
 plot(mtl_int_plot_eth)
 ```
@@ -3802,7 +3817,6 @@ plot(mtl_int_plot_eth)
 ```r
 ggsave("mtl_int_plot_eth.jpg", dpi = 150, height = 4, width = 6)
 ```
-
 
 # Sensedoc and Ethica Comparisons per day
 
@@ -3872,14 +3886,11 @@ ggsave("ethica_vic.jpg", dpi = 150, height = 4, width = 6)
 
 ### Victoria SENSEDOC
 vic_sd_hex <- ggplot() + 
-                  #geom_sf(data = vic_da, alpha = 0.5, colour = "grey50") +
-                  geom_hex(aes(x = lon, y = lat), data = vic_sd, binwidth = c(0.003, 0.003)) +
+                  geom_hex(aes(x = lon, y = lat), data = vic_sd, binwidth = c(0.005, 0.005)) +
                   coord_sf(
                       xlim = sf::st_bbox(vic_int_t)[c(1,3)],
                       ylim = sf::st_bbox(vic_int_t)[c(2,4)]) +
-                  #annotation_scale() + 
                   scale_fill_gradient(name="Count of GPS points", low = "grey90", high = "red", na.value = "white") + 
-                  #facet_wrap(~ date) +
                   labs(x = "Longitude", y = "Latitude") +
                   theme_minimal() + 
                   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
@@ -3895,14 +3906,11 @@ plot(vic_sd_hex)
 ggsave("vic_sd_hex.jpg", dpi = 150, height = 4, width = 6)
 
 vic_ethica_hex <- ggplot() + 
-                  #geom_sf(data = vic_da, alpha = 0.5, colour = "grey50") +
-                  geom_hex(aes(x = lon, y = lat), data = vic_ethica, binwidth = c(0.003, 0.003)) +
+                  geom_hex(aes(x = lon, y = lat), data = vic_ethica, binwidth = c(0.005, 0.005)) +
                   coord_sf(
                       xlim = sf::st_bbox(vic_int_t)[c(1,3)],
                       ylim = sf::st_bbox(vic_int_t)[c(2,4)]) +
-                  #annotation_scale() + 
                   scale_fill_gradient(name="Count of GPS points", low = "grey90", high = "red", na.value = "white") +
-                  #facet_wrap(~ date) +
                   labs(x = "Longitude", y = "Latitude") +
                   theme_minimal() + 
                   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
@@ -3980,16 +3988,13 @@ plot(ethica_van)
 ```r
 ggsave("ethica_van.jpg", dpi = 150, height = 4, width = 6)
 
-### Victoria SENSEDOC
+### Vancouver SENSEDOC
 van_sd_hex <- ggplot() + 
-                  #geom_sf(data = vic_da, alpha = 0.5, colour = "grey50") +
-                  geom_hex(aes(x = lon, y = lat), data = van_sd, binwidth = c(0.003, 0.003)) +
+                  geom_hex(aes(x = lon, y = lat), data = van_sd, binwidth = c(0.005, 0.005)) +
                   coord_sf(
                       xlim = sf::st_bbox(van_int)[c(1,3)],
                       ylim = sf::st_bbox(van_int)[c(2,4)]) +
-                  #annotation_scale() + 
                   scale_fill_gradient(name="Count of GPS points", low = "grey90", high = "red", na.value = "white") + 
-                  #facet_wrap(~ date) +
                   labs(x = "Longitude", y = "Latitude") +
                   theme_minimal() + 
                   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
@@ -4005,14 +4010,11 @@ plot(van_sd_hex)
 ggsave("van_sd_hex.jpg", dpi = 150, height = 4, width = 6)
 
 van_eth_hex <- ggplot() + 
-                  #geom_sf(data = vic_da, alpha = 0.5, colour = "grey50") +
-                  geom_hex(aes(x = lon, y = lat), data = van_ethica, binwidth = c(0.003, 0.003)) +
+                  geom_hex(aes(x = lon, y = lat), data = van_ethica, binwidth = c(0.005, 0.005)) +
                   coord_sf(
                       xlim = sf::st_bbox(van_int)[c(1,3)],
                       ylim = sf::st_bbox(van_int)[c(2,4)]) +
-                  #annotation_scale() + 
                   scale_fill_gradient(name="Count of GPS points", low = "grey90", high = "red", na.value = "white") +
-                  #facet_wrap(~ date) +
                   labs(x = "Longitude", y = "Latitude") +
                   theme_minimal() + 
                   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
@@ -4092,8 +4094,7 @@ ggsave("ethica_sk.jpg", dpi = 150, height = 4, width = 6)
 
 ### Saskatoon SENSEDOC
 sk_sd_hex <- ggplot() + 
-                  #geom_sf(data = vic_da, alpha = 0.5, colour = "grey50") +
-                  geom_hex(aes(x = lon, y = lat), data = sk_sd, binwidth = c(0.003, 0.003)) +
+                  geom_hex(aes(x = lon, y = lat), data = sk_sd, binwidth = c(0.005, 0.005)) +
                   coord_sf(
                       xlim = sf::st_bbox(sk_int_t)[c(1,3)],
                       ylim = sf::st_bbox(sk_int_t)[c(2,4)]) +
@@ -4118,7 +4119,7 @@ ggsave("sk_sd_hex.jpg", dpi = 150, height = 4, width = 6)
 
 sk_eth_hex <- ggplot() + 
                   #geom_sf(data = vic_da, alpha = 0.5, colour = "grey50") +
-                  geom_hex(aes(x = lon, y = lat), data = sk_eth, binwidth = c(0.003, 0.003)) +
+                  geom_hex(aes(x = lon, y = lat), data = sk_eth, binwidth = c(0.005, 0.005)) +
                   coord_sf(
                       xlim = sf::st_bbox(sk_int_t)[c(1,3)],
                       ylim = sf::st_bbox(sk_int_t)[c(2,4)]) +
@@ -4204,14 +4205,11 @@ ggsave("ethica_mtl.jpg", dpi = 150, height = 4, width = 6)
 
 ### Montreal SENSEDOC
 mtl_sd_hex <- ggplot() + 
-                  #geom_sf(data = mtl_da, alpha = 0.1, colour = "white") +
-                  geom_hex(aes(x = lon, y = lat), data = mtl_sd, binwidth = c(0.003, 0.003)) +
+                  geom_hex(aes(x = lon, y = lat), data = mtl_sd, binwidth = c(0.009, 0.009)) +
                   coord_sf(
                       xlim = sf::st_bbox(mtl_cyc)[c(1,3)],
                       ylim = sf::st_bbox(mtl_cyc)[c(2,4)]) +
-                  #annotation_scale() + 
                   scale_fill_gradient(name="Count of GPS points", low = "grey90", high = "red", na.value = "white") + 
-                  #facet_wrap(~ date) +
                   labs(x = "Longitude", y = "Latitude") +
                   theme_minimal() + 
                   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
@@ -4229,14 +4227,11 @@ ggsave("mtl_sd_hex.jpg", dpi = 150, height = 4, width = 6)
 ### Montreal ETHICA
 
 mtl_eth_hex <- ggplot() + 
-                  #geom_sf(data = vic_da, alpha = 0.5, colour = "grey50") +
-                  geom_hex(aes(x = lon, y = lat), data = mtl_eth, binwidth = c(0.003, 0.003)) +
+                  geom_hex(aes(x = lon, y = lat), data = mtl_eth, binwidth = c(0.009, 0.009)) +
                   coord_sf(
                       xlim = sf::st_bbox(mtl_cyc)[c(1,3)],
                       ylim = sf::st_bbox(mtl_cyc)[c(2,4)]) +
-                  #annotation_scale() + 
                   scale_fill_gradient(name="Count of GPS points", low = "grey90", high = "red", na.value = "white") +
-                  #facet_wrap(~ date) +
                   labs(x = "Longitude", y = "Latitude") +
                   theme_minimal() + 
                   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
@@ -4510,8 +4505,9 @@ exposure_sd <- sd %>%
 ```
 
 ```r
-exposure_sd %>% group_by(city_id) %>%
+exposure_table_sd <- exposure_sd %>% group_by(city_id) %>%
                   get_summary_stats(abs_exposure, rel_exposure)
+exposure_table_sd
 ```
 
 ```
@@ -4535,12 +4531,40 @@ exposure_sd %>% group_by(city_id) %>%
 ```r
 exposure_sd$day_week <- wday(exposure_sd$date, label = TRUE)
 
+exposure_week_sd <- exposure_sd %>% group_by(day_week) %>%
+                      get_summary_stats(abs_exposure, rel_exposure)
+exposure_week_sd
+```
+
+```
+## # A tibble: 14 x 14
+##    day_week variable         n   min   max median    q1      q3     iqr    mad
+##    <ord>    <chr>        <dbl> <dbl> <dbl>  <dbl> <dbl>   <dbl>   <dbl>  <dbl>
+##  1 Sun      abs_exposure   945     0   972 32     4     125     121     47.4  
+##  2 Sun      rel_exposure   945     0     1  0.095 0.009   0.439   0.431  0.141
+##  3 Mon      abs_exposure   892     0   961 24     4     109     105     35.6  
+##  4 Mon      rel_exposure   892     0     1  0.075 0.013   0.383   0.37   0.111
+##  5 Tue      abs_exposure   901     0   992 29     4     132     128     43.0  
+##  6 Tue      rel_exposure   901     0     1  0.134 0.017   0.574   0.557  0.199
+##  7 Wed      abs_exposure   922     0  1067 36     8     154.    146.    53.4  
+##  8 Wed      rel_exposure   922     0     1  0.147 0.026   0.563   0.537  0.218
+##  9 Thu      abs_exposure  1000     0   907 38     7     157.    150.    56.3  
+## 10 Thu      rel_exposure  1000     0     1  0.162 0.025   0.562   0.537  0.236
+## 11 Fri      abs_exposure  1068     0  1024 34     6     153.    147.    50.4  
+## 12 Fri      rel_exposure  1068     0     1  0.146 0.022   0.551   0.529  0.217
+## 13 Sat      abs_exposure  1035     0  1142 34     5     142.    138.    50.4  
+## 14 Sat      rel_exposure  1035     0     1  0.113 0.014   0.548   0.534  0.168
+## # … with 4 more variables: mean <dbl>, sd <dbl>, se <dbl>, ci <dbl>
+```
+
+```r
 daily_exposure_rel <- ggplot(exposure_sd, aes(x = day_week, y = rel_exposure)) +
                     geom_boxplot(outlier.shape = NA) +
-                    facet_wrap(~ city_id) + 
+                    facet_wrap(~ city_id, nrow = 1) + 
                     xlab("Day of the Week") +
                     ylab("Relative Exposure (%)") +
-                    theme_classic()
+                    theme_classic() + 
+                    theme(axis.text.x = element_text(angle = 90))
 plot(daily_exposure_rel)
 ```
 
@@ -4551,10 +4575,11 @@ ggsave("daily_exposure_rel.jpg", dpi = 150, height = 4, width = 6)
 
 daily_exposure_abs <- ggplot(exposure_sd, aes(x = day_week, y = abs_exposure)) +
                     geom_boxplot(outlier.shape = NA) +
-                    facet_wrap(~ city_id) + 
+                    facet_wrap(~ city_id, nrow = 1) + 
                     xlab("Day of the Week") +
                     ylab("Absolute Exposure (minutes)") +
-                    theme_classic()
+                    theme_classic() + 
+                    theme(axis.text.x = element_text(angle = 90))
 plot(daily_exposure_abs)
 ```
 
@@ -4570,28 +4595,37 @@ ggsave("daily_exposure_abs.jpg", dpi = 150, height = 4, width = 6)
 ```r
 exposure_sd_hour$hour_fct <- as.factor(exposure_sd_hour$hour)
 
-daily_exposure_tod_rel <- ggplot(exposure_sd_hour, aes(x = hour_fct, y = mean_rel_exposure)) +
+hour_exposure_rel <- ggplot(exposure_sd_hour, aes(x = hour, y = mean_rel_exposure, group = hour_fct)) +
                     geom_boxplot() +
                     facet_wrap(~ city_id) + 
                     xlab("Hour of the Day") +
                     ylab("Average Relative Exposure (%)") +
-                    theme_classic()
-plot(daily_exposure_tod_rel)
+                    theme_classic2() +
+                    scale_x_continuous(breaks=seq(0,24,2)) 
+plot(hour_exposure_rel)
 ```
 
 ![](baseline_paper_code_files/figure-html/unnamed-chunk-51-1.png)<!-- -->
 
 ```r
-daily_exposure_tod_abs <- ggplot(exposure_sd_hour, aes(x = hour_fct, y = mean_abs_exposure)) +
+ggsave("hour_exposure_rel.jpg", dpi = 150, height = 4, width = 6)
+
+
+hour_exposure_abs <- ggplot(exposure_sd_hour, aes(x = hour, y = mean_abs_exposure, group = hour_fct)) +
                     geom_boxplot() +
                     facet_wrap(~ city_id) + 
                     xlab("Hour of the Day") +
                     ylab("Average Asbolute Exposure (minutes)") +
-                    theme_classic()
-plot(daily_exposure_tod_abs)
+                    theme_classic() +
+                    scale_x_continuous(breaks=seq(0,24,2)) 
+plot(hour_exposure_abs)
 ```
 
 ![](baseline_paper_code_files/figure-html/unnamed-chunk-51-2.png)<!-- -->
+
+```r
+ggsave("hour_exposure_abs.jpg", dpi = 150, height = 4, width = 6)
+```
 
 ### Ethica
 
@@ -4624,8 +4658,10 @@ exposure_ethica <- ethica %>%
 ```
 
 ```r
-exposure_ethica %>% group_by(city_id) %>%
-                  get_summary_stats(abs_exposure, rel_exposure)
+exposure_table_eth <- exposure_ethica %>% group_by(city_id) %>%
+                        get_summary_stats(abs_exposure, rel_exposure)
+
+exposure_table_eth
 ```
 
 ```
