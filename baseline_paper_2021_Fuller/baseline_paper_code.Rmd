@@ -1867,7 +1867,7 @@ exposure_sd_hour <- sd %>%
                     summarise(
                       tot_minutes = sum(minutes),
                       abs_exposure = sum(exposed), 
-                      rel_exposure = abs_exposure/tot_minutes
+                      rel_exposure = (abs_exposure/tot_minutes)*100
                     )
 
 exposure_sd_hour <- exposure_sd_hour %>%
@@ -1882,7 +1882,7 @@ exposure_sd <- sd %>%
                     summarise(
                       tot_minutes = first(minutes_id_date_city),
                       abs_exposure = sum(exposed), 
-                      rel_exposure = abs_exposure/tot_minutes
+                      rel_exposure = (abs_exposure/tot_minutes)*100
                     )
 
 exposure_table_sd <- exposure_sd %>% group_by(city_id) %>%

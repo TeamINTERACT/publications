@@ -4475,7 +4475,7 @@ exposure_sd_hour <- sd %>%
                     summarise(
                       tot_minutes = sum(minutes),
                       abs_exposure = sum(exposed), 
-                      rel_exposure = abs_exposure/tot_minutes
+                      rel_exposure = (abs_exposure/tot_minutes)*100
                     )
 ```
 
@@ -4496,7 +4496,7 @@ exposure_sd <- sd %>%
                     summarise(
                       tot_minutes = first(minutes_id_date_city),
                       abs_exposure = sum(exposed), 
-                      rel_exposure = abs_exposure/tot_minutes
+                      rel_exposure = (abs_exposure/tot_minutes)*100
                     )
 ```
 
@@ -4512,17 +4512,17 @@ exposure_table_sd
 
 ```
 ## # A tibble: 8 x 14
-##   city_id   variable        n   min   max  median     q1      q3     iqr     mad
-##   <chr>     <chr>       <dbl> <dbl> <dbl>   <dbl>  <dbl>   <dbl>   <dbl>   <dbl>
-## 1 Montreal  abs_exposu…  1658     0   832  25      4     102      98      37.1  
-## 2 Montreal  rel_exposu…  1658     0     1   0.134  0.014   0.492   0.478   0.199
-## 3 Saskatoon abs_exposu…   771     0  1067 259     91     489     398     274.   
-## 4 Saskatoon rel_exposu…   771     0     1   0.931  0.4     1       0.6     0.102
-## 5 Vancouver abs_exposu…  1520     0   891  13      1      71      70      19.3  
-## 6 Vancouver rel_exposu…  1520     0     1   0.047  0.003   0.358   0.355   0.069
-## 7 Victoria  abs_exposu…  2814     0  1142  31      7     114     107      46.0  
-## 8 Victoria  rel_exposu…  2814     0     1   0.092  0.018   0.337   0.319   0.136
-## # … with 4 more variables: mean <dbl>, sd <dbl>, se <dbl>, ci <dbl>
+##   city_id variable     n   min   max median     q1    q3   iqr   mad  mean    sd
+##   <chr>   <chr>    <dbl> <dbl> <dbl>  <dbl>  <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
+## 1 Montre… abs_exp…  1658     0   832  25     4     102    98    37.1  91.6 150. 
+## 2 Montre… rel_exp…  1658     0   100  13.4   1.45   49.2  47.8  19.9  27.9  32.3
+## 3 Saskat… abs_exp…   771     0  1067 259    91     489   398   274.  304.  245. 
+## 4 Saskat… rel_exp…   771     0   100  93.1  40.0   100    60.0  10.2  70.5  35.1
+## 5 Vancou… abs_exp…  1520     0   891  13     1      71    70    19.3  79.7 148. 
+## 6 Vancou… rel_exp…  1520     0   100   4.65  0.256  35.8  35.5   6.9  22.8  32.3
+## 7 Victor… abs_exp…  2814     0  1142  31     7     114   107    46.0  95.8 146. 
+## 8 Victor… rel_exp…  2814     0   100   9.17  1.83   33.7  31.9  13.6  22.7  28.3
+## # … with 2 more variables: se <dbl>, ci <dbl>
 ```
 
 #### Daily Exposure SenseDoc
@@ -4538,23 +4538,23 @@ exposure_week_sd
 
 ```
 ## # A tibble: 14 x 14
-##    day_week variable         n   min   max median    q1      q3     iqr    mad
-##    <ord>    <chr>        <dbl> <dbl> <dbl>  <dbl> <dbl>   <dbl>   <dbl>  <dbl>
-##  1 Sun      abs_exposure   945     0   972 32     4     125     121     47.4  
-##  2 Sun      rel_exposure   945     0     1  0.095 0.009   0.439   0.431  0.141
-##  3 Mon      abs_exposure   892     0   961 24     4     109     105     35.6  
-##  4 Mon      rel_exposure   892     0     1  0.075 0.013   0.383   0.37   0.111
-##  5 Tue      abs_exposure   901     0   992 29     4     132     128     43.0  
-##  6 Tue      rel_exposure   901     0     1  0.134 0.017   0.574   0.557  0.199
-##  7 Wed      abs_exposure   922     0  1067 36     8     154.    146.    53.4  
-##  8 Wed      rel_exposure   922     0     1  0.147 0.026   0.563   0.537  0.218
-##  9 Thu      abs_exposure  1000     0   907 38     7     157.    150.    56.3  
-## 10 Thu      rel_exposure  1000     0     1  0.162 0.025   0.562   0.537  0.236
-## 11 Fri      abs_exposure  1068     0  1024 34     6     153.    147.    50.4  
-## 12 Fri      rel_exposure  1068     0     1  0.146 0.022   0.551   0.529  0.217
-## 13 Sat      abs_exposure  1035     0  1142 34     5     142.    138.    50.4  
-## 14 Sat      rel_exposure  1035     0     1  0.113 0.014   0.548   0.534  0.168
-## # … with 4 more variables: mean <dbl>, sd <dbl>, se <dbl>, ci <dbl>
+##    day_week variable         n   min   max median    q1    q3   iqr   mad  mean
+##    <ord>    <chr>        <dbl> <dbl> <dbl>  <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>
+##  1 Sun      abs_exposure   945     0   972  32    4     125   121    47.4 115. 
+##  2 Sun      rel_exposure   945     0   100   9.52 0.861  43.9  43.1  14.1  26.5
+##  3 Mon      abs_exposure   892     0   961  24    4     109   105    35.6 101. 
+##  4 Mon      rel_exposure   892     0   100   7.50 1.26   38.3  37.0  11.1  25.3
+##  5 Tue      abs_exposure   901     0   992  29    4     132   128    43.0 113. 
+##  6 Tue      rel_exposure   901     0   100  13.4  1.70   57.4  55.7  19.9  30.2
+##  7 Wed      abs_exposure   922     0  1067  36    8     154.  146.   53.4 123. 
+##  8 Wed      rel_exposure   922     0   100  14.7  2.60   56.3  53.7  21.8  31.6
+##  9 Thu      abs_exposure  1000     0   907  38    7     157.  150.   56.3 120. 
+## 10 Thu      rel_exposure  1000     0   100  16.2  2.48   56.2  53.7  23.6  31.2
+## 11 Fri      abs_exposure  1068     0  1024  34    6     153.  147.   50.4 114. 
+## 12 Fri      rel_exposure  1068     0   100  14.6  2.16   55.1  52.9  21.7  30.7
+## 13 Sat      abs_exposure  1035     0  1142  34    5     142.  138.   50.4 117. 
+## 14 Sat      rel_exposure  1035     0   100  11.3  1.38   54.8  53.4  16.8  30.0
+## # … with 3 more variables: sd <dbl>, se <dbl>, ci <dbl>
 ```
 
 ```r
