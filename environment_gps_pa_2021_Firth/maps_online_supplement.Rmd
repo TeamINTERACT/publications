@@ -140,22 +140,6 @@ m %>% addProviderTiles(providers$Stamen.TonerLite) %>%
             title = "Time spent in physical activity quintiles (5 is most active)") 
 ```
 
-### Moderate/Vigorous physical activity minutes
-
-```{r include = FALSE, echo=FALSE}
-m <- leaflet() %>% setView(lng = -123.37, lat =48.40, zoom = 10)
-m %>% addProviderTiles(providers$Stamen.TonerLite) %>% 
-        addPolygons(data= DA_time.Vic.shp, fillColor = ~pal2(DA_time.Vic.shp$MVPAMins_Vic_quint), 
-              fillOpacity = 0.7, 
-              weight = 0.2, 
-              smoothFactor = 0.2, 
-              group="Moderate/Vigorous physical activity quintiles") %>% 
-      addLegend(pal = pal3, 
-            values = DA_time.Vic.shp$MVPAMins_Vic_quint, 
-            position = "bottomright", 
-            title = "Moderate/Vigorous physical activity quintiles") 
-```
-
 ## Vancouver
 
 ### CanALE Quintiles
@@ -195,21 +179,6 @@ m %>% addProviderTiles(providers$Stamen.TonerLite) %>%
             values = DA_time.Van.shp$ActiveMins_Van_quint, 
             position = "bottomright", 
             title = "Time spent in physical activity quintiles (5 is most active)") 
-```
-
-### Moderate/Vigorous physical activity minutes
-```{r include = FALSE, echo=FALSE}
-m <- leaflet() %>% setView(lng = -123.11, lat =49.255, zoom = 12)
-m %>% addProviderTiles(providers$Stamen.TonerLite) %>% 
-        addPolygons(data= DA_time.Van.shp, fillColor = ~pal2(DA_time.Van.shp$MVPAMins_Van_quint), 
-              fillOpacity = 0.7, 
-              weight = 0.2, 
-              smoothFactor = 0.2, 
-              group="Moderate/Vigorous physical activity quintiles") %>% 
-      addLegend(pal = pal3, 
-            values = DA_time.Van.shp$MVPAMins_Van_quint, 
-            position = "bottomright", 
-            title = "Moderate/Vigorous physical activity quintiles") 
 ```
 
 ## Saskatoon
@@ -253,21 +222,6 @@ m %>% addProviderTiles(providers$Stamen.TonerLite) %>%
             title = "Time spent in physical activity quintiles (5 is most active)") 
 ```
 
-### Moderate/Vigorous physical activity minutes
-```{r include = FALSE, echo=FALSE}
-m <- leaflet() %>% setView(lng = -106.670, lat =52.158, zoom = 11)
-m %>% addProviderTiles(providers$Stamen.TonerLite) %>% 
-        addPolygons(data= DA_time.Ssk.shp, fillColor = ~pal2(DA_time.Ssk.shp$MVPAMins_Ssk_quint), 
-              fillOpacity = 0.7, 
-              weight = 0.2, 
-              smoothFactor = 0.2, 
-              group="Moderate/Vigorous physical activity quintiles") %>% 
-      addLegend(pal = pal3, 
-            values = DA_time.Ssk.shp$MVPAMins_Ssk_quint, 
-            position = "bottomright", 
-            title = "Moderate/Vigorous physical activity quintiles") 
-```
-
 ## Montreal
 
 ### CanALE Quintiles
@@ -307,19 +261,4 @@ m %>% addProviderTiles(providers$Stamen.TonerLite) %>%
             values = DA_time.Mtl.shp$ActiveMins_Mtl_quint, 
             position = "bottomright", 
             title = "Time spent in physical activity quintiles (5 is most active)") 
-```
-
-### Moderate/Vigorous physical activity minutes
-```{r include = FALSE, echo=FALSE}
-m <- leaflet() %>% setView(lng = -73.567, lat =45.502, zoom = 11)
-m %>% addProviderTiles(providers$Stamen.TonerLite) %>% 
-        addPolygons(data= DA_time.Mtl.shp, fillColor = ~pal2(DA_time.Mtl.shp$MVPAMins_Mtl_quint), 
-              fillOpacity = 0.7, 
-              weight = 0.2, 
-              smoothFactor = 0.2, 
-              group="Moderate/Vigorous physical activity quintiles") %>% 
-      addLegend(pal = pal3, 
-            values = DA_time.Mtl.shp$MVPAMins_Mtl_quint, 
-            position = "bottomright", 
-            title = "Moderate/Vigorous physical activity quintiles") 
 ```
