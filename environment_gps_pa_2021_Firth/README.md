@@ -12,12 +12,14 @@
 
 ## Maps
 
-Code for maps [here](https://github.com/TeamINTERACT/publications/blob/master/environment_gps_pa_2021_Firth/maps_online_supplement.Rmd)
-HTML file with live maps [here](https://github.com/TeamINTERACT/publications/raw/master/environment_gps_pa_2021_Firth/maps_online_supplement.html) Please right click and download the HTML file. 
+Code for maps [here](https://github.com/TeamINTERACT/publications/blob/master/environment_gps_pa_2021_Firth/maps_online_supplement.Rmd)  
+
+HTML file with live maps [here](https://github.com/TeamINTERACT/publications/raw/master/environment_gps_pa_2021_Firth/maps_online_supplement.html) (Please right click and download the HTML file) 
 
 ## Analysis
 
-Data wrangling R code [here](https://github.com/TeamINTERACT/publications/blob/master/environment_gps_pa_2021_Firth/data_wrangling.RMD)
+Data wrangling R code [here](https://github.com/TeamINTERACT/publications/blob/master/environment_gps_pa_2021_Firth/data_wrangling.RMD)  
+
 Data analysis Stata code [here](https://github.com/TeamINTERACT/publications/blob/master/environment_gps_pa_2021_Firth/stata_code.md)
 
 ## Reference
