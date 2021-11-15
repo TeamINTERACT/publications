@@ -1,8 +1,4 @@
-# Environment_gps_pa_2021_Firth
-
-## Reference
-
-Firth C, Kestens Y, Winters M, Stanley K, Bell S, Thierry B, Phillips K, Poirier-Stephens Z, Fuller D. Associations between built and social environments and physically activity among adults using high frequency Global Positioning System and accelerometer data: A multilevel level in four Canadian cities. International Journal of Behavioural Nutrition and Physical Activity.
+# Using 2M combined Global Position System and accelerometer data to examine were built and social environments are associated with physical activity in four Canadian cities
 
 ## Abstract
 
@@ -23,6 +19,10 @@ HTML file with live maps [here](https://github.com/TeamINTERACT/publications/raw
 
 Data wrangling R code [here](https://github.com/TeamINTERACT/publications/blob/master/environment_gps_pa_2021_Firth/data_wrangling.RMD)
 Data analysis Stata code [here](https://github.com/TeamINTERACT/publications/blob/master/environment_gps_pa_2021_Firth/stata_code.md)
+
+## Reference
+
+Firth C, Kestens Y, Winters M, Stanley K, Bell S, Thierry B, Phillips K, Poirier-Stephens Z, Fuller D. Associations between built and social environments and physically activity among adults using high frequency Global Positioning System and accelerometer data: A multilevel level in four Canadian cities. International Journal of Behavioural Nutrition and Physical Activity.
 
 ## Key Words 
 
