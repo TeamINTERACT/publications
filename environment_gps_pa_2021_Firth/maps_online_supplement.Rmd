@@ -1,0 +1,325 @@
+---
+title: "Time spent being physically active in INTERACT cities"
+author: "Caislin Firth"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    keep_md: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Maps of the amount of time spent in physical activity (light, moderate, or vigorous) are presented for each city and includes quintiles of the time spent (in minutes) within each dissemination area. These maps are standardized at the regional-level to display spatial patterns, that can be compared across cities, of where participants were more likely to spend their time being physically active. 
+
+```{r include=FALSE}
+#Insert shapefile of DAs
+library(leaflet)
+library(sp)
+library(rgdal)
+library(sf)
+library(cancensus)
+library(tidyverse)
+library(gtools)
+```
+
+```{r include = FALSE, echo = FALSE}
+#options(cancensus.api_key = "CensusMapper_788e94c8b386fbcad61660867fc80aff")
+```
+
+```{r include=FALSE}
+#CA16 <- list_census_vectors("CA16")
+#regions <- list_census_regions("CA16")
+#DAs_2016 <- get_census(dataset = "CA16", level="DA", regions=list(PR=c("59","47","24")),
+#                       vectors=c("v_CA16_401"), geo_format = "sf")
+```
+
+```{r include=FALSE}
+#Import DA-level indicators "DA4mapping"
+load("/Users/dfuller/Dropbox/Projects/INTERACT_github/publications/environment_gps_pa_2021_Firth/MappingWorkspace.RData")
+#DA_variables <- read.csv("/Users/dfuller/Dropbox/Projects/INTERACT_github/publications/environment_gps_pa_2021_Firth/MappingWorkspace.RData")
+#DA_time.shp <- merge(DAs_2016, DA_variables, by="GeoUID", all.y=TRUE)
+```
+
+```{r include=FALSE, echo = FALSE}
+DA_time.Mtl.shp <- DA_time.shp %>%
+  filter(CMA_UID == "24462") %>%
+  mutate(ActiveMins_Mtl_q = quantcut(MinsActive, q=5),
+         ActiveMins_Mtl_quint = ntile(MinsActive, 5))
+         #MVPAMins_Mtl_q = quantcut(MinsMVPA, q=5),
+         #MVPAMins_Mtl_quint = ntile(MinsMVPA, 5))
+
+DA_time.Ssk.shp <- DA_time.shp %>%
+  filter(CMA_UID == "47725") %>%
+  mutate(ActiveMins_Ssk_q = quantcut(MinsActive, q=5),
+         ActiveMins_Ssk_quint = ntile(MinsActive, 5))
+         #MVPAMins_Ssk_q = quantcut(MinsMVPA, q=5),
+         #MVPAMins_Ssk_quint = ntile(MinsMVPA, 5))
+
+DA_time.Van.shp <- DA_time.shp %>%
+  filter(CMA_UID == "59933") %>%
+  mutate(ActiveMins_Van_q = quantcut(MinsActive, q=5),
+         ActiveMins_Van_quint = ntile(MinsActive, 5))
+         #MVPAMins_Van_q = quantcut(MinsMVPA, q=5),
+         #MVPAMins_Van_quint = ntile(MinsMVPA, 5))
+
+DA_time.Vic.shp <- DA_time.shp %>%
+  filter(CMA_UID == "59935") %>%
+  mutate(ActiveMins_Vic_q = quantcut(MinsActive, q=5),
+         ActiveMins_Vic_quint = ntile(MinsActive, 5))
+         #MVPAMins_Vic_q = quantcut(MinsMVPA, q=5),
+         #MVPAMins_Vic_quint = ntile(MinsMVPA, 5))
+```
+
+```{r eval=FALSE, include=FALSE}
+#Victoria time spent (in minutes) quintile cut points:
+levels(DA_time.Vic.shp$ActiveMins_Vic_q)
+#levels(DA_time.Vic.shp$MVPAMins_Vic_q)
+```
+
+```{r eval=FALSE, include=FALSE}
+#Vancouver time spent (in minutes) quintile cut points:
+levels(DA_time.Van.shp$ActiveMins_Van_q)
+#levels(DA_time.Van.shp$MVPAMins_Van_q)
+```
+
+```{r eval=FALSE, include=FALSE}
+#Saskatoon time spent (in minutes) quintile cut points:
+levels(DA_time.Ssk.shp$ActiveMins_Ssk_q)
+#levels(DA_time.Ssk.shp$MVPAMins_Ssk_q)
+```
+
+```{r, eval=FALSE, include=FALSE}
+#Montreal time spent (in minutes) quintile cut points:
+levels(DA_time.Mtl.shp$ActiveMins_Mtl_q)
+#levels(DA_time.Ssk.shp$MVPAMins_Ssk_q)
+```
+
+## Victoria
+
+```{r, include=FALSE}
+#pal <- colorNumeric("Spectral", domain=Van_proximity$prox_idx_emp)
+pal <- colorFactor("Spectral", domain=DA_time.shp$CanALE_q)
+pal2 <- colorFactor("PuOr", domain=DA_time.Vic.shp$ActiveMins_Vic_quint)
+pal3 <- colorFactor("PuOr", domain=DA_time.Vic.shp$MVPAMins_Vic_quint)
+#popup <- paste0("Employment proximity: ", as.character(Van_proximity$prox_idx_emp))
+#popupnbhood <- paste0("Neighbourhood: ", as.character(Van_nbhoods$name))
+```
+
+### CanALE Quintiles
+
+```{r, echo = FALSE}
+m <- leaflet() %>% setView(lng = -123.37, lat =48.40, zoom = 10)
+m %>% addProviderTiles(providers$Stamen.TonerLite) %>% 
+        addPolygons(data= DA_time.shp, fillColor = ~pal(DA_time.shp$CanALE_q), 
+              fillOpacity = 0.7, 
+              weight = 0.2, 
+              smoothFactor = 0.2, 
+              group="CanALE quintiles") %>% 
+      addLegend(pal = pal, 
+            values = DA_time.shp$CanALE_q, 
+            position = "bottomright", 
+            title = "CanALE quintiles") 
+```
+
+### Total activity minutes
+
+```{r, echo=FALSE}
+m <- leaflet() %>% setView(lng = -123.37, lat =48.40, zoom = 10)
+m %>% addProviderTiles(providers$Stamen.TonerLite) %>% 
+        addPolygons(data= DA_time.Vic.shp, fillColor = ~pal2(DA_time.Vic.shp$ActiveMins_Vic_quint), 
+              fillOpacity = 0.7, 
+              weight = 0.2, 
+              smoothFactor = 0.2, 
+              group="Time spent in physical activity quintiles") %>% 
+      addLegend(pal = pal2, 
+            values = DA_time.Vic.shp$ActiveMins_Vic_quint, 
+            position = "bottomright", 
+            title = "Time spent in physical activity quintiles (5 is most active)") 
+```
+
+### Moderate/Vigorous physical activity minutes
+
+```{r include = FALSE, echo=FALSE}
+m <- leaflet() %>% setView(lng = -123.37, lat =48.40, zoom = 10)
+m %>% addProviderTiles(providers$Stamen.TonerLite) %>% 
+        addPolygons(data= DA_time.Vic.shp, fillColor = ~pal2(DA_time.Vic.shp$MVPAMins_Vic_quint), 
+              fillOpacity = 0.7, 
+              weight = 0.2, 
+              smoothFactor = 0.2, 
+              group="Moderate/Vigorous physical activity quintiles") %>% 
+      addLegend(pal = pal3, 
+            values = DA_time.Vic.shp$MVPAMins_Vic_quint, 
+            position = "bottomright", 
+            title = "Moderate/Vigorous physical activity quintiles") 
+```
+
+## Vancouver
+
+### CanALE Quintiles
+
+```{r, include=FALSE}
+#pal <- colorNumeric("Spectral", domain=Van_proximity$prox_idx_emp)
+pal <- colorFactor("Spectral", domain=DA_time.shp$CanALE_q)
+pal2 <- colorFactor("PuOr", domain=DA_time.Van.shp$ActiveMins_Van_quint)
+pal3 <- colorFactor("PuOr", domain=DA_time.Van.shp$MVPAMins_Van_quint)
+#popup <- paste0("Employment proximity: ", as.character(Van_proximity$prox_idx_emp))
+#popupnbhood <- paste0("Neighbourhood: ", as.character(Van_nbhoods$name))
+```
+```{r echo = FALSE}
+m <- leaflet() %>% setView(lng = -123.11, lat =49.255, zoom = 12)
+m %>% addProviderTiles(providers$Stamen.TonerLite) %>% 
+        addPolygons(data= DA_time.shp, fillColor = ~pal(DA_time.shp$CanALE_q), 
+              fillOpacity = 0.7, 
+              weight = 0.2, 
+              smoothFactor = 0.2, 
+              group="CanALE quintiles") %>% 
+      addLegend(pal = pal, 
+            values = DA_time.shp$CanALE_q, 
+            position = "bottomright", 
+            title = "CanALE quintiles") 
+```
+
+### Total activity minutes
+```{r, echo=FALSE}
+m <- leaflet() %>% setView(lng = -123.11, lat =49.255, zoom = 12)
+m %>% addProviderTiles(providers$Stamen.TonerLite) %>% 
+        addPolygons(data= DA_time.Van.shp, fillColor = ~pal2(DA_time.Van.shp$ActiveMins_Van_quint), 
+              fillOpacity = 0.7, 
+              weight = 0.2, 
+              smoothFactor = 0.2, 
+              group="Time spent in physical activity quintiles") %>% 
+      addLegend(pal = pal2, 
+            values = DA_time.Van.shp$ActiveMins_Van_quint, 
+            position = "bottomright", 
+            title = "Time spent in physical activity quintiles (5 is most active)") 
+```
+
+### Moderate/Vigorous physical activity minutes
+```{r include = FALSE, echo=FALSE}
+m <- leaflet() %>% setView(lng = -123.11, lat =49.255, zoom = 12)
+m %>% addProviderTiles(providers$Stamen.TonerLite) %>% 
+        addPolygons(data= DA_time.Van.shp, fillColor = ~pal2(DA_time.Van.shp$MVPAMins_Van_quint), 
+              fillOpacity = 0.7, 
+              weight = 0.2, 
+              smoothFactor = 0.2, 
+              group="Moderate/Vigorous physical activity quintiles") %>% 
+      addLegend(pal = pal3, 
+            values = DA_time.Van.shp$MVPAMins_Van_quint, 
+            position = "bottomright", 
+            title = "Moderate/Vigorous physical activity quintiles") 
+```
+
+## Saskatoon
+
+### CanALE Quintiles
+
+```{r, echo = FALSE}
+#pal <- colorNumeric("Spectral", domain=Van_proximity$prox_idx_emp)
+pal <- colorFactor("Spectral", domain=DA_time.shp$CanALE_q)
+pal2 <- colorFactor("PuOr", domain=DA_time.Ssk.shp$ActiveMins_Ssk_quint)
+pal3 <- colorFactor("PuOr", domain=DA_time.Ssk.shp$MVPAMins_Ssk_quint)
+#popup <- paste0("Employment proximity: ", as.character(Van_proximity$prox_idx_emp))
+#popupnbhood <- paste0("Neighbourhood: ", as.character(Van_nbhoods$name))
+```
+```{r eval=FALSE, include=FALSE}
+m <- leaflet() %>% setView(lng = -106.670, lat =52.158, zoom = 11)
+m %>% addProviderTiles(providers$Stamen.TonerLite) %>% 
+        addPolygons(data= DA_time.shp, fillColor = ~pal(DA_time.shp$CanALE_q), 
+              fillOpacity = 0.7, 
+              weight = 0.2, 
+              smoothFactor = 0.2, 
+              group="CanALE quintiles") %>% 
+      addLegend(pal = pal, 
+            values = DA_time.shp$CanALE_q, 
+            position = "bottomright", 
+            title = "CanALE quintiles") 
+```
+
+### Total activity minutes
+```{r, echo=FALSE}
+m <- leaflet() %>% setView(lng = -106.670, lat =52.158, zoom = 11)
+m %>% addProviderTiles(providers$Stamen.TonerLite) %>% 
+        addPolygons(data= DA_time.Ssk.shp, fillColor = ~pal2(DA_time.Ssk.shp$ActiveMins_Ssk_quint), 
+              fillOpacity = 0.7, 
+              weight = 0.2, 
+              smoothFactor = 0.2, 
+              group="Time spent in physical activity quintiles") %>% 
+      addLegend(pal = pal2, 
+            values = DA_time.Ssk.shp$ActiveMins_Ssk_quint, 
+            position = "bottomright", 
+            title = "Time spent in physical activity quintiles (5 is most active)") 
+```
+
+### Moderate/Vigorous physical activity minutes
+```{r include = FALSE, echo=FALSE}
+m <- leaflet() %>% setView(lng = -106.670, lat =52.158, zoom = 11)
+m %>% addProviderTiles(providers$Stamen.TonerLite) %>% 
+        addPolygons(data= DA_time.Ssk.shp, fillColor = ~pal2(DA_time.Ssk.shp$MVPAMins_Ssk_quint), 
+              fillOpacity = 0.7, 
+              weight = 0.2, 
+              smoothFactor = 0.2, 
+              group="Moderate/Vigorous physical activity quintiles") %>% 
+      addLegend(pal = pal3, 
+            values = DA_time.Ssk.shp$MVPAMins_Ssk_quint, 
+            position = "bottomright", 
+            title = "Moderate/Vigorous physical activity quintiles") 
+```
+
+## Montreal
+
+### CanALE Quintiles
+
+```{r}
+#pal <- colorNumeric("Spectral", domain=Van_proximity$prox_idx_emp)
+pal <- colorFactor("Spectral", domain=DA_time.shp$CanALE_q)
+pal2 <- colorFactor("PuOr", domain=DA_time.Mtl.shp$ActiveMins_Mtl_quint)
+pal3 <- colorFactor("PuOr", domain=DA_time.Mtl.shp$MVPAMins_Mtl_quint)
+#popup <- paste0("Employment proximity: ", as.character(Van_proximity$prox_idx_emp))
+#popupnbhood <- paste0("Neighbourhood: ", as.character(Van_nbhoods$name))
+```
+```{r eval=FALSE, echo=FALSE}
+m <- leaflet() %>% setView(lng = -73.567, lat =45.502, zoom = 11)
+m %>% addProviderTiles(providers$Stamen.TonerLite) %>% 
+        addPolygons(data= DA_time.shp, fillColor = ~pal(DA_time.shp$CanALE_q), 
+              fillOpacity = 0.7, 
+              weight = 0.2, 
+              smoothFactor = 0.2, 
+              group="CanALE quintiles") %>% 
+      addLegend(pal = pal, 
+            values = DA_time.shp$CanALE_q, 
+            position = "bottomright", 
+            title = "CanALE quintiles") 
+```
+
+### Total activity minutes
+```{r, echo=FALSE}
+m <- leaflet() %>% setView(lng = -73.567, lat =45.502, zoom = 11)
+m %>% addProviderTiles(providers$Stamen.TonerLite) %>% 
+        addPolygons(data= DA_time.Mtl.shp, fillColor = ~pal2(DA_time.Mtl.shp$ActiveMins_Mtl_quint), 
+              fillOpacity = 0.7, 
+              weight = 0.2, 
+              smoothFactor = 0.2, 
+              group="Time spent in physical activity quintiles") %>% 
+      addLegend(pal = pal2, 
+            values = DA_time.Mtl.shp$ActiveMins_Mtl_quint, 
+            position = "bottomright", 
+            title = "Time spent in physical activity quintiles (5 is most active)") 
+```
+
+### Moderate/Vigorous physical activity minutes
+```{r include = FALSE, echo=FALSE}
+m <- leaflet() %>% setView(lng = -73.567, lat =45.502, zoom = 11)
+m %>% addProviderTiles(providers$Stamen.TonerLite) %>% 
+        addPolygons(data= DA_time.Mtl.shp, fillColor = ~pal2(DA_time.Mtl.shp$MVPAMins_Mtl_quint), 
+              fillOpacity = 0.7, 
+              weight = 0.2, 
+              smoothFactor = 0.2, 
+              group="Moderate/Vigorous physical activity quintiles") %>% 
+      addLegend(pal = pal3, 
+            values = DA_time.Mtl.shp$MVPAMins_Mtl_quint, 
+            position = "bottomright", 
+            title = "Moderate/Vigorous physical activity quintiles") 
+```

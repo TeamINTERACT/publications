@@ -1,7 +1,6 @@
 ---
 title: "Stata Code"
 author: "Daniel Fuller"
-date: "15/10/2021"
 output:
       html_document:
         keep_md: true
