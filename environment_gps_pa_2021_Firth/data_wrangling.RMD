@@ -1,7 +1,6 @@
 ---
-title: "Firth_Nbhood_main"
+title: "Data Wrangling"
 author: "Daniel Fuller"
-date: "2/13/2020"
 output:
       html_document:
         keep_md: true
