@@ -1,0 +1,526 @@
+---
+title: "Firth_Nbhood_main"
+author: "Daniel Fuller"
+date: "2/13/2020"
+output:
+      html_document:
+        keep_md: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+How many minutes per area per day for each participant and plot a histogram
+
+# Steps
+
+1. Read the shape file and filter for your city
+2. Read people data (CSV)
+3. Join the csv file with the shape file using st_join and create a new column
+4. Group by interact_id, then by date and then with location
+5. Tally or count the number of row in each group and summarize it
+
+
+The csv file (the trip file) has coordination but doesn not have CTUID and ... So we need to join it with a file ( Canda shape file) to create CTUID column.
+
+## Read the CSV and the shape file and filter for your city
+
+**change city name and run for each city**
+
+```{r library, message=FALSE, warning=FALSE}
+library(sf)
+library(ggplot2)
+library(stplanr)
+library(tidyverse)
+library(imputeTS)
+library(data.table)
+library(plotly)
+library(kableExtra)
+library(qwraps2)
+library(cancensus)
+library(geojsonsf)
+library(lubridate)
+library(readxl)
+library(stringr)
+library(fuzzyjoin)
+library(stars)
+library(raster)
+library(foreign)
+conflict_prefer("select", "dplyr")
+conflict_prefer("filter", "dplyr")
+```
+
+### Reading in Census Data
+```{r, echo = FALSE, include = FALSE}
+options(cancensus.api_key = "CensusMapper_159fe4a88e8c934fece317e847beef84")
+options(cancensus.cache_path = "/Users/dfuller/Documents/INTERACT/activity_space_gps/raw_data/census/") ##.rda files will be stored here
+```
+
+```{r}
+CA16 <- list_census_vectors("CA16")
+regions <- list_census_regions("CA16")
+
+variable_list <- c(
+  "v_CA16_401", #Total Population 2016
+  "	v_CA16_406") #Population density per square kilometre
+
+region_list <- c(
+  "59935", #Victoria
+  "59933", #Vancouver
+  "47725", #Saskatoon
+  "24462")  #Montreal
+
+census_data <- get_census(dataset='CA16', regions=list(CMA=region_list),
+                          vectors=c(variable_list),
+                          level='DA', use_cache = TRUE, geo_format = 'sf')
+
+census_data <- census_data %>%
+	mutate(city = case_when(
+		CMA_UID == "59935" ~ "victoria",
+		CMA_UID == "59933" ~ "vancouver",
+		CMA_UID == "47725" ~ "saskatoon",
+		CMA_UID == "24462" ~ "montreal",
+		TRUE ~ "other"
+	))
+```
+
+## Joining the CanALE 
+
+```{r}
+### CanALE
+canale <- read_csv("raw_data/exposure/CanALE_2016.csv")
+canale$dauid <- as.character(canale$dauid)
+
+canale <- canale %>% dplyr::select(dauid, ale_index, ale_class, ale_tranist, ale_transit_class)
+
+canale$ale_index <- as.numeric(canale$ale_index)
+
+ggplot(canale, aes(ale_index)) + 
+        geom_histogram() 
+
+
+canale$from_canale <- 1
+
+census_data$from_census <- 1
+
+census_data <- inner_join(census_data, canale, by = c("GeoUID" = "dauid"))   
+
+table(census_data$from_canale, census_data$from_census)
+
+census_data$from_canale <- NULL
+census_data$from_census <- NULL
+
+summary(census_data$ale_index)
+
+ggplot(census_data, aes(ale_index)) + 
+        geom_histogram() 
+```
+
+### Joining Sprawl data
+
+```{r}
+### Sprawl
+sprawl <- read_csv("raw_data/exposure/Sprawl_2016.csv")
+sprawl$CTUID <- formatC(as.numeric(sprawl$CTUID), format = 'f' , digits = 2, flag = '0')
+sprawl <- sprawl %>%
+            dplyr::select(CTUID, sprawl)
+
+sprawl$from_sprawl <- 1
+
+census_data$from_census <- 1
+
+census_data <- inner_join(census_data, sprawl, by = c("CT_UID" = "CTUID"))   
+
+table(census_data$from_sprawl, census_data$from_census)
+
+census_data$from_sprawl <- NULL
+census_data$from_census <- NULL
+```
+
+### Joining proximity measures data
+
+```{r}
+proximity <- read_xlsx("raw_data/exposure/ProximityNational.xlsx", col_names = TRUE, sheet = "data")
+proximity[,21:41] <- sapply(proximity[,21:41],as.numeric)
+proximity$DAUID <- as.character(proximity$DAUID)
+
+proximity_da <- proximity %>%
+                    group_by(DAUID) %>%
+                    summarize(
+                        CMAPUID = first(CMAPUID),
+                        CMANAME = first(CMANAME),
+                        prox_idx_emp = median(prox_idx_emp, na.rm = TRUE),
+                        prox_idx_pharma = median(prox_idx_pharma, na.rm = TRUE),
+                        prox_idx_childcare = median(prox_idx_childcare, na.rm = TRUE),
+                        prox_idx_health = median(prox_idx_health, na.rm = TRUE),
+                        prox_idx_grocery = median(prox_idx_grocery, na.rm = TRUE),
+                        prox_idx_educpri = median(prox_idx_educpri, na.rm = TRUE),
+                        prox_idx_educsec = median(prox_idx_educsec, na.rm = TRUE),
+                        prox_idx_lib = median(prox_idx_lib, na.rm = TRUE),
+                        prox_idx_parks = median(prox_idx_parks, na.rm = TRUE),
+                        prox_idx_transit = median(prox_idx_transit, na.rm = TRUE),
+                        transit_na = sum(transit_na, na.rm = TRUE),
+                        amenity_dense = median(amenity_dense, na.rm = TRUE),
+                        suppressed = sum(suppressed, na.rm = TRUE)
+                    )
+
+proximity_da$from_prox <- 1
+
+census_data$from_census <- 1
+                    
+census_data <- inner_join(census_data, proximity_da, by = c("GeoUID" = "DAUID"))
+
+table(census_data$from_prox, census_data$from_census)
+
+census_data$from_prox <- NULL
+census_data$from_census <- NULL
+```
+
+### Joining GENUINE data
+
+```{r}
+genuine <- read_xlsx("raw_data/exposure/proximity_gentrification.xlsx", col_names = TRUE)
+genuine <- dplyr::select(genuine,1:33)
+genuine$GeoUID <- formatC(as.numeric(genuine$GeoUID), format = 'f' , digits = 2, flag = '0')
+genuine$GeoUID <- as.character(genuine$GeoUID)
+
+genuine$from_genuine <- 1
+
+census_data$from_census <- 1
+                    
+census_data <- inner_join(census_data, genuine, by = c("CT_UID" = "GeoUID"))
+
+table(census_data$from_genuine, census_data$from_census)
+
+census_data$from_genuine <- NULL
+census_data$from_census <- NULL
+```
+
+### Getting home postal code
+```{r}
+data_temp <- NULL
+
+data_temp <- dir(path = "raw_data/individual", full.names = TRUE, pattern = "*2cef601.csv", recursive = TRUE) %>%
+   purrr::map(function(i){
+     dfhx <- read.csv(i, header = TRUE)
+     temp <- bind_rows(data_temp, dfhx)
+   })
+
+individual_data <- bind_rows(data_temp)
+rm(data_temp)
+
+home_cp <- individual_data %>% dplyr::select(interact_id, city_id, residence_cp, date_of_survey)
+
+table(home_cp$city_id, home_cp$residence_cp)
+```
+
+### Getting PCCF data
+```{r}
+pccf <- read_csv("raw_data/individual/pccf.csv")
+
+pccf_interact <- pccf %>% filter(PROV == "SK" | PROV == "BC" | PROV == "QC")
+```
+
+### Linking home postal code to PCCF
+```{r}
+home_cp$residence_cp <- str_replace_all(home_cp$residence_cp, fixed(" "), "")
+
+home_cp_pccf <- inner_join(home_cp, pccf_interact, by = c("residence_cp" = "POSTALCODE"))
+
+table(home_cp_pccf$city_id)
+
+home_cp_pccf$home_yes <- 1
+
+home_cp_pccf$home_da <- home_cp_pccf$PRCDDA
+
+home_cp_pccf$home_ct <- home_cp_pccf$CT_NAME
+
+table(home_cp_pccf$home_yes, home_cp_pccf$city_id)
+```
+
+### Reading in the individual level data
+```{r warning=FALSE}
+data_temp <- NULL
+
+data_temp <- dir(path = "raw_data/top/sd", full.names = TRUE, pattern = "*.csv", recursive = TRUE) %>%
+   purrr::map(function(i){
+     dfhx <- read.csv(i, header = TRUE)
+     temp <- bind_rows(data_temp, dfhx)
+   })
+
+person_data <- bind_rows(data_temp)
+rm(data_temp)
+table(person_data$city)
+
+people <- person_data %>%
+            group_by(interact_id) %>%
+                summarize(
+                    city_id = first(city_id),
+                    device = "sensedoc"
+                )
+table(people$city_id)
+```
+
+## Some basic cleaning
+
+```{r warning=FALSE}
+# Filter out if they are not in the city, Reason: No CTUID for out of the city
+person_data <- person_data %>% filter(in_city == 1)
+```
+
+## Join the person file with GPS coordinates with the census shapefile
+
+```{r}
+# convert to sf object to enable joining with a shape file
+person_data <- sf::st_as_sf(person_data, coords = c("lon", "lat"), crs = 4326)
+
+# Convert to UTM 
+person_data <- sf::st_transform(person_data) 
+
+# Joining based on location
+person_census <- sf::st_join(x = person_data, y = census_data) 
+
+table(person_census$city_id, person_census$city)
+```
+
+## Join the person file with GPS coordinates with the home location file
+```{r}
+home_cp_pccf <- rename(home_cp_pccf, GeoUID = PRCDDA)
+
+home_cp_pccf <- home_cp_pccf %>%
+                    dplyr::select(interact_id, residence_cp, GeoUID, home_yes, home_da, home_ct)
+
+home_cp_pccf$GeoUID <- as.character(home_cp_pccf$GeoUID)
+
+person_census <- full_join(person_census, home_cp_pccf)
+
+person_census <- person_census %>% 
+                    dplyr::mutate(
+                        home_yes = replace_na(home_yes, 0),
+                        home_da = replace_na(home_da, 0),
+                        home_ct = replace_na(home_ct, 0)
+                        )
+
+table(person_census$home_yes)
+```
+
+## Create a date column and add a minutes in census tract by id, date, and census tract column 
+
+```{r}
+person_census$date <- person_census$utcdate %>% as.Date()
+person_census$minutes <- 1
+
+person_census <- person_census %>% 
+  group_by(interact_id, date, GeoUID) %>% 
+  mutate(
+      minutes_id_date_ct = sum(minutes)
+  )
+```
+
+## Add a weekend and weekday column
+
+```{r}
+person_census$weekend <- wday(person_census$date, label = TRUE)
+table(person_census$weekend)
+
+person_census <- person_census %>%
+	mutate(weekend_yes = case_when(
+		weekend == "Sun" ~ 1,
+		weekend == "Mon" ~ 0,
+		weekend == "Tue" ~ 0,
+		weekend == "Wed" ~ 0,
+		weekend == "Thu" ~ 0,
+		weekend == "Fri" ~ 0,
+		weekend == "Sat" ~ 1
+	))
+
+table(person_census$weekend, person_census$weekend_yes)
+```
+
+## Create a date column and add a minutes in census tract by id, date, and census tract and activity level 
+
+```{r}
+table(person_census$activity_levels)
+
+person_census <- person_census %>%
+	mutate(activity_levels = case_when(
+		x_count < 100 ~ "sedentary",
+		x_count >= 100 & x_count <= 1951 ~ "light",
+		x_count >= 1951 & x_count <= 5724 ~ "moderate",
+	  x_count >= 5725 ~ "vigorous"
+	))
+
+### MVPA Minutes
+person_census <- person_census %>%
+	mutate(mvpa = case_when(
+		activity_levels == "light" ~ 0,
+		activity_levels == "sedentary" ~ 0,
+		activity_levels == "moderate" ~ 1,
+		activity_levels == "vigorous" ~ 1
+	))
+
+person_census <- person_census %>% 
+    group_by(interact_id, date, GeoUID) %>% 
+      mutate(total_mvpa_minutes = sum(mvpa))
+
+### All active minutes
+person_census <- person_census %>%
+	mutate(all_activity = case_when(
+		activity_levels == "light" ~ 1,
+		activity_levels == "sedentary" ~ 0,
+		activity_levels == "moderate" ~ 1,
+		activity_levels == "vigorous" ~ 1
+	))
+
+person_census <- person_census %>% 
+    group_by(interact_id, date, GeoUID) %>% 
+      mutate(total_active_minutes = sum(all_activity))
+```
+
+## Getting the health data covariates
+
+### Getting home postal code
+```{r}
+data_temp <- NULL
+
+data_temp <- dir(path = "raw_data/individual", full.names = TRUE, pattern = "*1884baf.csv", recursive = TRUE) %>%
+   purrr::map(function(i){
+     dfhx <- read.csv(i, header = TRUE)
+     temp <- bind_rows(data_temp, dfhx)
+   })
+
+health_data <- bind_rows(data_temp)
+rm(data_temp)
+
+health_data <- health_data %>% dplyr::select(income_needs,
+                                                employment,
+                                                children_household,
+                                                marital_status,
+                                                interact_id,
+                                                city_id
+                                            )
+table(health_data$city_id)
+```
+
+### Marital Status 
+
+```{r}
+table(health_data$marital_status)
+
+health_data <- health_data %>% 
+                mutate(marital_status_cat = case_when(
+                    marital_status == 1 ~ "Single",
+                    marital_status == 2 ~ "$Married/commonlaw",
+                    marital_status == 3 ~ "$Separated/divorced",
+                    marital_status == 4 ~ "$Widowed"
+                ))
+
+table(health_data$marital_status, health_data$marital_status_cat)
+```
+
+## Joining other health variables and gps data
+
+```{r}
+person_census <- left_join(person_census, health_data, by = "interact_id") 
+```
+
+### Getting the weather data
+
+```{r}
+weather_data <- read_csv("raw_data/weather/2016_2020_weather_vic_van_sask_mtl.csv")
+
+weather_data <- weather_data %>% dplyr::select(date_time, city_id, max_temp_c, min_temp_c, mean_temp_c, total_rain_mm, total_snow_mm, total_precip_mm, snow_ground_cm, speed_gust_km_h)
+
+weather_data$date <- ymd(weather_data$date_time)
+
+weather_data <- weather_data %>% 
+                    mutate(city_id = case_when(
+                      city_id == "Montreal" ~ "montreal",
+                      city_id == "Saskatoon" ~ "saskatoon",
+                      city_id == "Vancouver" ~ "vancouver",
+                      city_id == "Victoria" ~ "victoria"
+                    ))
+
+weather_data <- arrange(weather_data, date, city_id)
+
+person_census$city_id <- person_census$city
+person_census <- arrange(person_census, date, city_id)
+
+person_census <- left_join(person_census, weather_data, by = c("date", "city_id"))
+
+people_1 <- person_census %>%
+            group_by(interact_id) %>%
+                summarize(
+                    city_id = first(city_id)
+                )
+
+table(people_1$city_id)
+```
+
+### Write file
+
+```{r}
+write_csv(person_census, "person_census.csv")
+```
+
+## Create a new dataframe with summarized data 
+
+**Warning... this takes more than 30 minutes to run. 
+
+```{r}
+person_census_summary <- person_census %>% 
+                group_by(interact_id, date, GeoUID) %>% 
+                  summarise(minutes_id_date_ct = first(minutes_id_date_ct),
+                            average_speed = mean(speed, na.rm = TRUE),
+                            average_alt = mean(alt, na.rm = TRUE),
+                            total_active_minutes = first(total_active_minutes),
+                            mvpa_active_minutes = first(total_mvpa_minutes),
+                            ale_index = first(ale_index),
+                            ale_tranist = first(ale_tranist),
+                            sprawl = first(sprawl), 
+                            freeman_cma_gentrified = first(freeman_cma_gentrified),
+                            freeman_cma_gentrified = first(freeman_cma_gentrified),
+                            ding_cma_gentrifiable = first(ding_cma_gentrifiable),
+                            ding_cma_gentrified = first(ding_cma_gentrified),
+                            ding_cma_gentrified_category = first(ding_cma_gentrified_category),
+                            grube_cma_gentrifiable = first(grube_cma_gentrifiable),
+                            grube_cma_gentrified = first(grube_cma_gentrified),
+                            steinmetz_cma_gentrifiable = first(steinmetz_cma_gentrifiable),
+                            steinmetz_cma_gentrified = first(steinmetz_cma_gentrified),
+                            income_needs = first(income_needs), 
+                            employment = first(employment),
+                            children_household = first(children_household),
+                            marital_status_cat = first(marital_status_cat),
+                            max_temp_c = mean(max_temp_c, na.rm = TRUE),
+                            min_temp_c = mean(min_temp_c, na.rm = TRUE),
+                            mean_temp_c = mean(mean_temp_c, na.rm = TRUE), 
+                            total_rain_mm = mean(total_rain_mm, na.rm = TRUE),
+                            total_snow_mm = mean(total_snow_mm, na.rm = TRUE),
+                            total_precip_mm = mean(total_precip_mm), na.rm = TRUE,
+                            snow_ground_cm = mean(snow_ground_cm, na.rm = TRUE),
+                            speed_gust_km_h = mean(speed_gust_km_h, na.rm = TRUE),
+                            prox_idx_emp = first(prox_idx_emp), 
+                            prox_idx_pharma = first(prox_idx_pharma),
+                            prox_idx_childcare = first(prox_idx_childcare),
+                            prox_idx_health = first(prox_idx_health),
+                            prox_idx_grocery = first(prox_idx_grocery),
+                            prox_idx_educpri = first(prox_idx_educpri),
+                            prox_idx_educsec = first(prox_idx_educsec),
+                            prox_idx_lib = first(prox_idx_lib),
+                            prox_idx_parks = first(prox_idx_parks),
+                            prox_idx_transit = first(prox_idx_transit),
+                            city = first(city),
+                            age = first(age),
+                            gender = first(gender), 
+                            income = first(income), 
+                            education = first(education),
+                            weekend_yes = first(weekend_yes), 
+                            home_ct = first(home_ct), 
+                            home_yes = first(home_yes)
+                            )
+```
+
+```{r}
+write_csv(person_census_summary, "person_census_summary.csv")
+```
