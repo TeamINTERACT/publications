@@ -1,6 +1,6 @@
 # Physical Activity Line Modelling
 
-This project is designed to help classify an individual's physical activity patterns over the course of a study by plotting their activity levels per minute and fitting a piecewise equation to the distribution. This model is represented in the following manners: a csv detailing each of the line's parameters for each
+This project is designed to help classify an individual's physical activity patterns over the course of a study by plotting their activity levels per minute and fitting a piecewise equation to the distribution. This model is represented in the following manners: a csv detailing each of the line's parameters for each participant, figures representing the overall distribution of all physical activity intensities among all participants, and a classification into one of five categories (non-vigorous, consistent, moderately active, extremely active, outlier) for each individual based on their parameters.
 
 ## Dependencies
 This project requires Python 3.6 or later on any major operating system. 
@@ -12,7 +12,7 @@ To install this program, using git and python's built-in installer pip on the co
 
 Downloading the repository:
 ```
-git clone https://git.cs.usask.ca/kdp740/pa-line-modelling.git
+git clone https://github.com/TeamINTERACT/publications/edit/master/pa_line_modelling_2022_Phillips
 ```
 
 Installing dependencies:
