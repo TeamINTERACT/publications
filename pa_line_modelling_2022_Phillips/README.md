@@ -2,6 +2,8 @@
 
 This project is designed to help classify an individual's physical activity patterns over the course of a study by plotting their activity levels per minute and fitting a piecewise equation to the distribution. This model is represented in the following manners: a csv detailing each of the line's parameters for each participant, figures representing the overall distribution of all physical activity intensities among all participants, and a classification into one of five categories (non-vigorous, consistent, moderately active, extremely active, outlier) for each individual based on their parameters.
 
+The core of this project is the pwlf library, which is used to calculate the optimal breakpoints and the corresponding slopes for our model. The library is hosted on https://github.com/cjekel/piecewise_linear_fit_py.
+
 ## Dependencies
 This project requires Python 3.6 or later on any major operating system. 
 All library dependencies for this project can be found in the requirements.txt file, which is also located in this repository.
