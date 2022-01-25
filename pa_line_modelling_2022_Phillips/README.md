@@ -14,14 +14,16 @@ To install this program, using git and python's built-in installer pip on the co
 
 Downloading the repository:
 ```
-git clone https://github.com/TeamINTERACT/publications/edit/master/pa_line_modelling_2022_Phillips
+git clone https://github.com/TeamINTERACT/publications
 ```
 
 Installing dependencies:
 ```
-cd pa-line-modelling
+cd publications/pa-line-modelling
 pip install -r requirements.txt
 ```
+
+As all code for publications related to TeamINTERACT is stored in the same repository, this will also download several unrelated projects. Only the files contained in publications/pa-line-modelling are relevant to this project.
 
 
 ## Demonstration
