@@ -4,9 +4,115 @@ import numpy as np
 from datetime import timezone, timedelta
 import warnings
 from collections import OrderedDict, Counter
-from accel_profiling_working import fit_and_plot_activity
-from sklearn.metrics import auc
+import pwlf
+import math
+from sklearn.metrics import auc, r2_score, mean_squared_error, explained_variance_score
 import matplotlib.pyplot as plt
+
+
+def piecewise_fit(x, y, xbounds, start=None):
+    """
+    Using the pwlf library, compute the optimal breakpoints for a given set of data and either the number of line
+    segments or the boundaries of possible breakpoints and where to start searching for breakpoints
+    :param x: The x-coordinates of the distribution
+    :param y: The y-coordinates of the distribution
+    :param xbounds: If the start parameter is filled, this is a list of paired upper and lower boundaries, one pair for
+    each breakpoint. Otherwise, it is simply the number of line segments we want to divide the points into
+    :param start: A list of what x-values pwlf will start looking for each breakpoint at. Optional.
+    :return: The parameters of the computed line, including breakpoints and slopes of each segment and an R^2 score for
+    the fit, in a list. Also returns the coordinates of the points on the calculated line
+    """
+    fit = pwlf.PiecewiseLinFit(x, np.log(y))
+    if start:
+        x_breaks = fit.fit_guess(start, bounds=xbounds) #in this case xbounds is a n by 2 matrix of search boundaries
+    else:
+        x_breaks = fit.fit(xbounds) #in this case xbounds must be an integer for the number of segments
+
+    slopes = fit.calc_slopes()
+    if slopes[-1] > 0:  # fix for some edge cases where the last slope is positive
+        slopes[-1] = -1e-12
+        tail_index = list(compress(x, x > x_breaks[-2]))
+        tail_fix = np.array(tail_index) * -1e-12 + fit.predict(x_breaks[-2])
+        tail_fix[tail_fix < 0] = 1e-12
+    else:
+        tail_fix = []
+
+    out_line = []
+    out_line.extend(x_breaks)
+    out_line.extend(slopes)
+    if len(tail_fix):
+        y_hat = fit.predict(list(compress(x, x <= x_breaks[-2]))).tolist()
+        y_hat.extend(tail_fix)
+        y_hat = np.array(y_hat)
+    else:
+        y_hat = fit.predict(x)
+    return out_line, np.exp(y_hat)
+
+
+def plot_model_data_fit(x, y, yhat, plot_fname='', title_string='', xlabel='', ylabel='', unclosed=False):
+    """
+    Plots the given x and y coordinates as points, then plots the model's line on the same axis for comparison
+    :param x: The x-coordinates
+    :param y: The original y-coordinates
+    :param yhat: The model's y-coordinates
+    :param plot_fname: Where to save the resulting figure, if applicable
+    :param title_string: The title for the figure
+    :param xlabel: The figure's x-axis label
+    :param ylabel: The figure's y-axis label
+    :param unclosed: If True, do not save the figure and instead allow it to be modified by the function which called
+    this function
+    :return: None
+    """
+    plt.figure()
+    plt.plot(x, y, 'o')
+    plt.plot(x, yhat, '-')
+    plt.yscale('log')
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title_string)
+    if not unclosed:
+        plt.savefig(plot_fname)
+        plt.close()
+
+
+def fit_and_plot_activity(x, y, xbounds, start=[], return_model_coordinates=False, show_plot=False, plot_fname='',
+                          title_string='', xlabel='', ylabel='', silent_plot=False):
+    """
+    Using the pwlf library, compute the optimal breakpoints for a given set of data and either the number of line
+    segments or the boundaries of possible breakpoints and where to start searching for breakpoints. Afterwards, plot
+    the resulting line model alongside the original data points
+    :param x: The x-coordinates of the distribution
+    :param y: The y-coordinates of the distribution
+    :param xbounds: If the start parameter is filled, this is a list of paired upper and lower boundaries, one pair for
+    each breakpoint. Otherwise, it is simply the number of line segments we want to divide the points into
+    :param start: A list of what x-values pwlf will start looking for each breakpoint at. Optional.
+    :param return_model_coordinates: If True, return the model's resulting y-coordinates in addition to the model's
+    parameters
+    :param show_plot: If True, display the resulting plot on the screen once generated
+    :param plot_fname: Where to save the resulting figure, if applicable. The figure will not be saved if unfilled
+    :param title_string: The title for the figure
+    :param xlabel: The figure's x-axis label
+    :param ylabel: The figure's y-axis label
+    :param silent_plot: If True, plot the figure without displaying or saving it, allowing it to be modified later
+    :return: The parameters of the computed line, including breakpoints and slopes of each segment and an R^2 score for
+    the fit, in a list. If return_model_coordinates is True, alse returns the coordinates of the points on the
+    calculated line
+    """
+    outframe, yhat = piecewise_fit(x, y, xbounds, start)
+    outframe.extend([r2_score(y, yhat)])
+    outframe.extend([r2_score(np.log(y), np.log(yhat))])
+    if plot_fname != '':
+        plot_model_data_fit(x, y, yhat, plot_fname, title_string, xlabel, ylabel)
+    elif show_plot:
+        plot_model_data_fit(x, y, yhat)
+        plt.show()
+    elif silent_plot:
+        plot_model_data_fit(x, y, yhat, unclosed=silent_plot)
+
+    if return_model_coordinates:
+        return outframe, yhat
+    else:
+        return outframe
 
 
 def fabricate_ts(df):
@@ -101,7 +207,7 @@ def metric_auc(dist=None, binsize=None, pointbounds=None, startpoints=None, x=No
         binned = bin_data(dist, binsize)
         x = list(binned.keys())
         y = list(binned.values())
-        _, yhat = fit_and_plot_activity(x, y, pointbounds, start=startpoints, return_yhat=True)
+        _, yhat = fit_and_plot_activity(x, y, pointbounds, start=startpoints, return_model_coordinates=True)
     if len(x) < 2:
         return 0
     return auc(x, np.log(yhat))
@@ -212,7 +318,7 @@ def calculate_metrics(p_data, participant_id, activity_column, metric, cycle=0, 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             plt.close()
-            line_info, yhat = fit_and_plot_activity(x, y, point_bounds, start=start_points, silent_plot=return_plot, return_yhat=True)
+            line_info, yhat = fit_and_plot_activity(x, y, point_bounds, start=start_points, silent_plot=return_plot, return_model_coordinates=True)
             if num_segments == return_plot:
                 for i in range(1, num_segments):
                     # place a vertical line on the graph at each breakpoint
@@ -248,8 +354,8 @@ def calculate_metrics(p_data, participant_id, activity_column, metric, cycle=0, 
             else:
                 new_row[str(num_segments) + '-seg_breakpoint_' + str(i)] = line_info[i]
             new_row[str(num_segments) + '-seg_slope_' + str(i)] = line_info[i + num_segments]
-        new_row[str(num_segments) + '-seg_r_square_exp'] = round(line_info[1 + 3 * num_segments], 5)
-        new_row[str(num_segments) + '-seg_r_square_log'] = round(line_info[6 + 3 * num_segments], 5)
+        new_row[str(num_segments) + '-seg_r_square_exp'] = round(line_info[1 + 2 * num_segments], 5)
+        new_row[str(num_segments) + '-seg_r_square_log'] = round(line_info[2 + 2 * num_segments], 5)
 
     if len(new_row.tolist()) > 3:
         return new_row
