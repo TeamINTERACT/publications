@@ -336,10 +336,12 @@ def calculate_metrics(p_data, participant_id, activity_column, metric, cycle=0, 
                 new_row['metric_tail_auc'] = max(10 ** -32, metric_auc(x=np.array(x)[x >= line_info[3]],
                                                                        yhat=np.array(yhat)[x >= line_info[3]]))
 
-                # Remove the highest point in the tail (and all points with the same height) to avoid outliers inflating
+                # Remove the highest point in the tail to avoid outliers inflating
                 # the AUC of the tail
-                tail_x = tail_x[tail_y != np.max(tail_y)]
-                tail_y = tail_y[tail_y != np.max(tail_y)]
+                new_row['tail_peak'] = np.median(tail_x[tail_y == np.max(tail_y)])
+                peak = np.where(tail_y == np.max(tail_y))
+                tail_x = np.delete(tail_x, peak[0][0])
+                tail_y = np.delete(tail_y, peak[0][0])
                 new_row['dist_tail_auc'] = max(10 ** -32, metric_auc(x=tail_x, yhat=tail_y))
             else:
                 # If the tail is completely empty, set the AUCs to an arbitrarily small value
