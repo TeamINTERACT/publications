@@ -161,13 +161,13 @@ def bin_data(column, binsize, filled=False, max_bin=-1):
     return OrderedDict(sorted(Counter(binned).items()))
 
 
-def trim_12k(arr):
+def trim_15k(arr):
     """
-    Remove all items from a list with a value greater than 12,000
+    Remove all items from a list with a value greater than 15,000
     :param arr: The initial list
-    :return: The input list without any values greater than 12,000
+    :return: The input list without any values greater than 15,000
     """
-    return list(np.array(arr)[np.array(arr) < 12000])
+    return list(np.array(arr)[np.array(arr) < 15000])
 
 
 def trim_tail_outliers(x, y, binsize, thresh=1):
@@ -252,7 +252,7 @@ metric_to_parameters = {
 }
 
 
-def calculate_metrics(p_data, participant_id, activity_column, metric, cycle=0, filter_participants=True, overwrite_binsize=None, return_plot=None):
+def calculate_metrics(p_data, participant_id, activity_column, metric, filter_participants=True, overwrite_binsize=None, return_plot=None, cycle=0):
     """
     Main function for the computation of physical activity breakpoint and slope metrics. Computed from a dataframe of
     Actigraph activity counts or MIMS units of a single participant.
@@ -297,7 +297,7 @@ def calculate_metrics(p_data, participant_id, activity_column, metric, cycle=0, 
     # Overwrite the appropriate number of minutes, then resample to the 1-minute level
     activity_records = filtering.skip_data(original_df, cycle).set_index('utcdate')
     minute_records = activity_records.groupby(activity_records.index.floor('1min')).sum()[activity_column].tolist()
-    minute_records = trim_12k(minute_records)
+    minute_records = trim_15k(minute_records)
 
     data = bin_data(minute_records, binsize)
 

@@ -38,26 +38,23 @@ if __name__ == "__main__":
     else:
         filter_data = True
 
-    cycles = [0, ]
+    output_df = pd.DataFrame()
+    for fname in tqdm(os.listdir(input_dir)):
+        if 'csv' not in fname:
+            continue
+        p_data = pd.read_csv(input_dir + '/' + fname)
+        if metric == 'mims':
+            participant_id = int(p_data['SEQN'].loc[0])
+            activity_column = 'PAXMXM'
+            p_data['utcdate'] = fabricate_ts(p_data)
+        elif metric == 'counts':
+            participant_id = int(p_data['iid'].loc[0])
+            activity_column = 'x_count'
+        else:
+            continue
+        output_row = calculate_metrics(p_data, participant_id, activity_column, metric, filter_data)
 
-    for cycle in cycles:
-        output_df = pd.DataFrame()
-        for fname in tqdm(os.listdir(input_dir)):
-            if 'csv' not in fname:
-                continue
-            p_data = pd.read_csv(input_dir + '/' + fname)
-            if metric == 'mims':
-                participant_id = int(p_data['SEQN'].loc[0])
-                activity_column = 'PAXMXM'
-                p_data['utcdate'] = fabricate_ts(p_data)
-            elif metric == 'counts':
-                participant_id = int(p_data['iid'].loc[0])
-                activity_column = 'x_count'
-            else:
-                continue
-            output_row = calculate_metrics(p_data, participant_id, activity_column, metric, cycle, filter_data)
+        output_df = output_df.append(output_row, ignore_index=True)
 
-            output_df = output_df.append(output_row, ignore_index=True)
-
-        output_df = classify(output_df, angle_thresh=0.001 if metric == 'counts' else 0.1)
-        output_df.to_csv('classified_' + metric + '_' + input_dir.replace('/', '') + '.csv')
+    output_df = classify(output_df, angle_thresh=0.001 if metric == 'counts' else 0.1)
+    output_df.to_csv('classified_' + metric + '_' + input_dir.replace('/', '') + '.csv')
