@@ -1,0 +1,2 @@
+The data in this directory is a small sample of the NHANES 2013-2014 Physical Activity Monitor - Minute participants, included for the purpose of testing this program.
+The full dataset can be downloaded from https://wwwn.cdc.gov/nchs/nhanes/search/datapage.aspx?Component=Examination&CycleBeginYear=2013.
