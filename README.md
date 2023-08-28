@@ -11,3 +11,7 @@ Brondeel, R., Kestens, Y., Rahimipour Anaraki, J., Stanley, K., Thierry, B., Ful
 ### baseline_paper_2021_Fuller
 
 Fuller, D..... M, Winter, Y Kestens. Examining the spatio-temporal dimensions of urban environments and health: Baseline results of the INTerventions, Research, and Action in Cities Team (INTERACT) cohort study. 
+
+### urban_vegetation_inequity_2023_Kiani
+
+Kiani, B., Thierry, B., Fuller D., Firth, C., Winter, M., Kestens, Y. Gentrification, neighborhood socioeconomic factors and urban vegetation inequities: A study of greenspace and tree canopy increases in Montreal, Canada
